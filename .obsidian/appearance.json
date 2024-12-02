@@ -1,0 +1,12 @@
+{
+  "accentColor": "",
+  "cssTheme": "",
+  "baseFontSize": 20,
+  "textFontFamily": "Fira Code,DejaVu Sans Mono for Powerline",
+  "monospaceFontFamily": "Fira Code",
+  "enabledCssSnippets": [
+    "snippet"
+  ],
+  "theme": "obsidian",
+  "interfaceFontFamily": "Fira Code"
+}

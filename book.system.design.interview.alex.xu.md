@@ -18,7 +18,7 @@ title: System Design Interview - An Insider’s Guide
 - [ ] [donnemartin/system-design-primer: Learn how to design large-scale systems. Prep for the system design interview. Includes Anki flashcards.](https://github.com/donnemartin/system-design-primer)
 - [ ] [Design Pinterest - TianPan.co](https://tianpan.co/notes/2016-02-13-crack-the-system-design-interview)
 
-## Notes
+## Summary
 
 ### 1 Scale
 - 5 DB types: RDMBS vs NoSQL (KV, Graph, Column, Document)
@@ -32,7 +32,7 @@ title: System Design Interview - An Insider’s Guide
 - MQ for long-running tasks
 
 ### 2 Estimation
-- memory > compression > disk > network
+- Fastest to slowest: memory > compression > disk > network
 - Commonly back-of-the-envelope: QPS, peak QPS, storage, cache, number of servers
 
 ### 3 Interview
@@ -69,8 +69,7 @@ To understand this setup, it is helpful to investigate the _request flow_ and _t
   used API response format to transfer data due to its simplicity. An example
   of the API response in JSON format is shown below:
 
-GET /users/12 – Retrieve user object for id = 12
-
+`GET /users/12 – Retrieve user object for id = 12`
 ```
 {
   "id": 12,
@@ -86,7 +85,6 @@ GET /users/12 – Retrieve user object for id = 12
 ### Database
 
 Split Web/DB to allow independent scaling
-
 ![db](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.03.png)
 
 ### Which databases to use?

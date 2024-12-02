@@ -1,0 +1,21 @@
+{
+  "vimMode": true,
+  "readableLineLength": true,
+  "showLineNumber": false,
+  "useMarkdownLinks": false,
+  "showUnsupportedFiles": true,
+  "attachmentFolderPath": "./assets",
+  "alwaysUpdateLinks": true,
+  "trashOption": "none",
+  "useTab": false,
+  "promptDelete": false,
+  "strictLineBreaks": true,
+  "pdfExportSettings": {
+    "includeName": true,
+    "pageSize": "Letter",
+    "landscape": false,
+    "margin": "1",
+    "downscalePercent": 82
+  },
+  "tabSize": 2
+}

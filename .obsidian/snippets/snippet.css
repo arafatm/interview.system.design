@@ -1,0 +1,149 @@
+/* https://docs.obsidian.md/Reference/CSS+variables/CSS+variables */
+
+.readme {
+  --table-column-min-width: 0;
+
+  .table-view-table>thead>tr>th {
+    font-size: 1rem;
+  }
+
+  .cm-html-embed td,
+  .markdown-rendered td,
+  .cm-html-embed th,
+  .markdown-rendered th {
+    padding: 0;
+  }
+}
+
+.readme.markdown-source-view.mod-cm6 .cm-table-widget .table-cell-wrapper {
+  padding: 0 .1rem;
+}
+
+body {
+  --font-text-size: 16px !important;
+}
+
+@media (prefers-color-scheme: light) {
+  .theme-light {
+    --bold-color: black;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme-dark {
+    --bold-color: yellow;
+    --code-background: #333340;
+    --file-line-width: 60rem;
+    --h1-size: 2.5rem;
+    --h2-size: 2rem;
+    --h3-size: 1.5rem;
+    --h4-size: 1.4rem;
+    --h5-size: 1.2rem;
+    --h6-size: 1.0rem;
+    --header-before-margin: 0;
+    --header-before-size: 0.6rem;
+    --header-color: rgb(160, 120, 190);
+    --italic-color: gold;
+    --popover-height: 100rem;
+    --popover-width: 60rem;
+    --table-row-alt-background-hover: #333340;
+    --table-row-alt-background: #292929;
+    --table-row-background-hover: #333340;
+    --tag-color: var(--header-color);
+    --tag-padding-x: 0.5rem;
+    --tag-padding-y: 0rem;
+    --tag-size: var(--font-text-size);
+    --tag-weight: 600;
+  }
+}
+
+
+td {
+  border: 0;
+  border-left: 1px solid #440 !important;
+  padding: 0.2rem !important;
+}
+
+.HyperMD-header {
+  color: var(--header-color);
+  background-color: var(--header-background);
+  margin: 0 !important;
+  padding: 0.4rem 0 !important;
+}
+
+.HyperMD-header-1 {
+  color: var(--background-primary);
+  background-color: var(--header-color);
+  border-radius: 1rem;
+  padding: 0 1rem !important;
+}
+
+.HyperMD-header-2 {
+  border-bottom: 1px solid var(--header-color);
+}
+
+.HyperMD-header-3 {
+  text-decoration: underline;
+}
+
+.HyperMD-header-6 {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.HyperMD-header-1:not(.cm-active)::before {
+  content: "";
+  font-size: var(--header-before-size);
+  margin-left: var(--header-before-margin);
+}
+
+.HyperMD-header-2:not(.cm-active)::before {
+  content: "";
+  font-size: var(--header-before-size);
+  margin-left: var(--header-before-margin);
+}
+
+.HyperMD-header-3:not(.cm-active)::before {
+  content: "";
+  font-size: var(--header-before-size);
+  margin-left: var(--header-before-margin);
+}
+
+.HyperMD-header-4:not(.cm-active)::before {
+  content: "";
+  font-size: var(--header-before-size);
+  margin-left: var(--header-before-margin);
+}
+
+.HyperMD-header-5:not(.cm-active)::before {
+  content: "";
+  font-size: var(--header-before-size);
+  margin-left: var(--header-before-margin);
+}
+
+.HyperMD-header-6:not(.cm-active)::before {
+  content: "";
+  font-size: var(--header-before-size);
+  margin-left: var(--header-before-margin);
+}
+
+.MJX-TEX {
+  color: hotpink;
+}
+
+/*.MJX-TEX { line-height: 0.8rem; color: palegoldenrod; font-size: 1.2rem; padding: 0.5rem 0.5rem; } !important*/
+
+/*
+img { max-height: 15rem;}
+img:not([width]) {max-height: 25rem;}
+*/
+/*
+--h1-color: var(--h3-color);
+--h2-color: var(--h3-color);
+--blockquote-background-color: midnightblue;
+--tag-color: palevioletred !important;
+ */
+
+/* Base elements 
+div.internal-embed img:not([width]) { max-height: 30rem; border: 2px solid var(--text-normal); margin: 0; padding: 0;}
+ */
