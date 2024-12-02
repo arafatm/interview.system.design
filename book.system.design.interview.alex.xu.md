@@ -26,15 +26,15 @@ title: System Design Interview - An Insider’s Guide
 - #load_balancer
 - shard DB: main (write) vs replica(s) (read)
   - Performance, Reliability, HA
-- Cache for temporary, (mostly) RO data
-- CDN for static assets
-- Stateless servers for autoscaling. Use persistent #nosql (redis) to store state
+-  #Cache for temporary, (mostly) RO data
+-  #CDN for static assets
+- Stateless servers for autoscaling. Use persistent #nosql ( #redis) to store state
 - geoDNS for DC geo-routing
 - MQ for long-running tasks
 
 ### 2 Estimation
 - Fastest to slowest: memory > compression > disk > network
-- Commonly back-of-the-envelope: QPS, peak QPS, storage, cache, number of servers
+- Commonly back-of-the-envelope: QPS, peak QPS, storage,  #cache, number of servers
 
 ### 3 Interview
 __communicate with interviewer__
@@ -177,7 +177,8 @@ multiple slave databases.
 
 ![master slave](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.05.png)
 
-> main for write, 
+> Writer/Reader
+>
 _Advantages_ of database #replication:
 - Better _performance_: In the master-slave model, all writes and updates
   happen in master nodes; whereas, read operations are distributed across slave
@@ -210,7 +211,7 @@ database might not be up to date__. The missing data needs to be updated by runn
 recovery scripts. Although some other #replication methods like multi-masters and circular
 #replication could help, those setups are more complicated; and their discussions are
 beyond the scope of this book. Interested readers should refer to the listed reference
-materials [4][5].
+materials [Multi-Master Replication](https://en.wikipedia.org/wiki/Multi-master_replication)
 
 Figure 1-6 shows the system design after adding the #load_balancer and database #replication.
 
@@ -225,147 +226,146 @@ Let us take a look at the design:
   This includes write, update, and delete operations.
 
 Now, you have a solid understanding of the web and data tiers, it is time to
-improve the load/response time. This can be done by adding a cache layer and
+improve the load/response time. This can be done by adding a  #cache layer and
 shifting static content (JavaScript/CSS/image/video files) to the content
-delivery network (CDN).
+delivery network ( #CDN).
 
-### Cache
+### #Cache
 
-A cache is a temporary storage area that stores the result of expensive
+A  #cache is a temporary storage area that stores the result of expensive
 responses or frequently accessed data in memory so that subsequent requests are
 served more quickly. As illustrated in Figure 1-6, every time a new web page
 loads, one or more database calls are executed to fetch data. The application
 performance is greatly affected by calling the database repeatedly.
 
-The cache can mitigate this problem.
+The  #cache can mitigate this problem.
 
-### Cache tier
+### #Cache tier
 
-The cache tier is a __temporary data store layer, much faster than the
-database__. The benefits of having a separate cache tier include better system
+The  #cache tier is a __temporary data store layer, much faster than the
+database__. The benefits of having a separate  #cache tier include better system
 performance, ability to reduce database workloads, and the ability to scale the
-cache tier independently. Figure 1-7 shows a possible setup of a cache server:
+ #cache tier independently. Figure 1-7 shows a possible setup of a  #cache server:
 
-![1-7 Cache](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.07.png)
+![1-7  #Cache](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.07.png)
 
-After receiving a request, a web server _first checks if the cache has the
+After receiving a request, a web server _first checks if the  #cache has the
 available response_. If it has, it sends data back to the client. If not, it
-queries the database, stores the response in cache, and sends it back to the
-client. This caching strategy is called a read-through cache.
+queries the database, stores the response in  #cache, and sends it back to the
+client. This caching strategy is called a read-through  #cache.
 
 Other caching strategies are available depending on the data type, size, and
 access patterns. A previous study explains how different caching strategies
 work [6].
 
-Interacting with cache servers is simple because most cache servers provide
+Interacting with  #cache servers is simple because most  #cache servers provide
 APIs for common programming languages. The following code snippet shows typical
-Memcached APIs:
+ #Memcached APIs:
 
 ```
 SECONDS=1
-cache.set('myKey', 'hi there', 3600 * SECONDS)
-cache.get('myKey')
+ #cache.set('myKey', 'hi there', 3600 * SECONDS)
+ #cache.get('myKey')
 ```
 
-### Considerations for using cache
+### Considerations for using  #cache
 
-Here are a few considerations for using a cache system:
-- __Decide when to use cache__. Consider using cache when data is _read
-  frequently but modified infrequently_. Since cached data is stored in
-  volatile memory, a cache server is _not ideal for persisting data_. For
-  instance, if a cache server restarts, all the data in memory is lost. Thus,
+Here are a few considerations for using a  #cache system:
+- __Decide when__ to use  #cache. Consider using  #cache when data is _read
+  frequently but modified infrequently_. Since  #cached data is stored in
+  volatile memory, a  #cache server is _not ideal for persisting data_. For
+  instance, if a  #cache server restarts, all the data in memory is lost. Thus,
   important data should be saved in persistent data stores.
 - __Expiration policy__. It is a good practice to implement an expiration
-  policy. Once cached data is expired, it is removed from the cache. _When
-  there is no expiration policy, cached data will be stored in the memory
+  policy. Once  #cached data is expired, it is removed from the  #cache. _When
+  there is no expiration policy,  #cached data will be stored in the memory
   permanently_. It is advisable not to make the expiration date too short as
   this will cause the system to reload data from the database too frequently.
   Meanwhile, it is advisable _not to make the expiration date too long as the
   data can become stale_.
-- __Consistency__: This involves keeping the data store and the cache in sync.
+- __Consistency__: This involves keeping the data store and the  #cache in sync.
   Inconsistency can happen because data-modifying operations on the data store
-  and cache are not in a single transaction. When scaling across multiple
-  regions, _maintaining consistency between the data store and cache is
+  and  #cache are not in a single transaction. When scaling across multiple
+  regions, _maintaining consistency between the data store and  #cache is
   challenging_. For further details, refer to the paper titled “Scaling
-  Memcache at Facebook” published by Facebook [7].
-- __Mitigating failures__: A single cache server represents a potential single
+   #Memcache at Facebook” published by Facebook [7].
+- __Mitigating failures__: A single  #cache server represents a potential single
   point of failure (_SPOF_), defined in Wikipedia as follows: “A single point
   of failure (SPOF) is a part of a system that, if it fails, will stop the
-  entire system from working” [8]. As a result, _multiple cache servers across
+  entire system from working” [8]. As a result, _multiple  #cache servers across
   different data centers are recommended_ to avoid SPOF. Another recommended
   approach is to _overprovision the required memory by certain percentages_.
   This provides a buffer as the memory usage increases.
-- __Eviction Policy__: Once the cache is full, any requests to add items to the
-  cache might cause existing items to be removed. This is called cache
-  eviction. Least-recently-used (_LRU_) is the most popular cache eviction
+- __Eviction Policy__: Once the  #cache is full, any requests to add items to the
+   #cache might cause existing items to be removed. This is called  #cache
+  eviction. Least-recently-used (_LRU_) is the most popular  #cache eviction
   policy. Other eviction policies, such as the Least Frequently Used (_LFU_) or
   First in First Out (_FIFO_), can be adopted to satisfy different use cases.
 
-### Content delivery network (CDN)
+### Content delivery network ( #CDN)
 
-A CDN is a network of geographically dispersed servers used to deliver static
-content. CDN servers cache static content like images, videos, CSS, JavaScript
+A  #CDN is a network of geographically dispersed servers used to deliver static
+content.  #CDN servers  #cache static content like images, videos, CSS, JavaScript
 files, etc.
 
 Dynamic content caching is a relatively new concept and beyond the scope of
 this book. It enables the caching of HTML pages that are based on request path,
 query strings, cookies, and request headers. Refer to the article mentioned in
-reference material [9] for more about this. This book focuses on how to use CDN
-to cache static content.
+reference material [9 Amazon CloudFront Dynamic Content Delivery](https://aws.amazon.com/cloudfront/dynamic-content/) for more about this. This book focuses on how to use  #CDN to  #cache static content.
 
-Here is how CDN works at the high-level: when a user visits a website, a _CDN
+Here is how  #CDN works at the high-level: when a user visits a website, a _CDN
 server closest to the user will deliver static content_. Intuitively, the
-further users are from CDN servers, the slower the website loads. For example,
-if CDN servers are in San Francisco, users in Los Angeles will get content
-faster than users in Europe. Figure 1-9 is a great example that shows how CDN
+further users are from  #CDN servers, the slower the website loads. For example,
+if  #CDN servers are in San Francisco, users in Los Angeles will get content
+faster than users in Europe. Figure 1-9 is a great example that shows how  #CDN
 improves load time.
 
 ![CDN](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.09.png)
 
-Figure 1-10 demonstrates the CDN workflow.
+Figure 1-10 demonstrates the  #CDN workflow.
 
 ![CDN workflow](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.10.png)
 
 1. User A tries to get image.png by using an image URL. The URL’s domain is
-   provided by the CDN provider. The following two image URLs are samples used
-   to demonstrate what image URLs look like on Amazon and Akamai CDNs:
+   provided by the  #CDN provider. The following two image URLs are samples used
+   to demonstrate what image URLs look like on Amazon and Akamai  #CDNs:
   - https://mysite.cloudfront.net/logo.jpg
   - https://mysite.akamai.com/image-manager/img/logo.jpg
-2. If the CDN server does not have image.png in the cache, the CDN server
+2. If the  #CDN server does not have image.png in the  #cache, the  #CDN server
    requests the file from the origin, which can be a web server or online
    storage like Amazon S3.
-3. The origin returns image.png to the CDN server, which includes optional HTTP
-   header Time-to-Live (TTL) which describes how long the image is cached.
-4. The CDN caches the image and returns it to User A. The image remains cached
-   in the CDN until the TTL expires.
+3. The origin returns image.png to the  #CDN server, which includes optional HTTP
+   header Time-to-Live (TTL) which describes how long the image is  #cached.
+4. The  #CDN  #caches the image and returns it to User A. The image remains  #cached
+   in the  #CDN until the TTL expires.
 5. User B sends a request to get the same image.
-6. The image is returned from the cache as long as the TTL has not expired.
+6. The image is returned from the  #cache as long as the TTL has not expired.
 
-Considerations of using a CDN
-- __Cost__: CDNs are run by third-party providers, and you are charged for data
-  transfers in and out of the CDN. Caching infrequently used assets provides no
-  significant benefits so you should consider moving them out of the CDN.
+Considerations of using a  #CDN
+- __Cost__:  #CDNs are run by third-party providers, and you are charged for data
+  transfers in and out of the  #CDN. Caching infrequently used assets provides no
+  significant benefits so you should consider moving them out of the  #CDN.
 - Setting an appropriate __cache expiry__: For time-sensitive content, setting
-  a cache expiry time is important. The cache expiry time should neither be too
+  a  #cache expiry time is important. The  #cache expiry time should neither be too
   long nor too short. If it is too long, the content might no longer be fresh.
   If it is too short, it can cause repeat reloading of content from origin
-  servers to the CDN.
+  servers to the  #CDN.
 - __CDN fallback__: You should consider how your website/application copes with
-  CDN failure. If there is a temporary CDN outage, clients should be able to
+   #CDN failure. If there is a temporary  #CDN outage, clients should be able to
   detect the problem and request resources from the origin.
-- __Invalidating files__: You can remove a file from the CDN before it expires
+- __Invalidating files__: You can remove a file from the  #CDN before it expires
   by performing one of the following operations:
-  - Invalidate the CDN object using APIs provided by CDN vendors.
+  - Invalidate the  #CDN object using APIs provided by  #CDN vendors.
   - Use object versioning to serve a different version of the object. To
     version an object, you can add a parameter to the URL, such as a version
     number. For example, version number 2 is added to the query string:
     `image.png?v=2`.
 
-![CDN & cache](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.11.png)
+![CDN &  #cache](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.11.png)
 
-Figure 1-11 shows the design after the CDN and cache are added.
+Figure 1-11 shows the design after the  #CDN and  #cache are added.
 1. Static assets (JS, CSS, images, etc.,) are no longer served by web servers.
-   They are fetched from the CDN for better performance.
+   They are fetched from the  #CDN for better performance.
 2. The database load is lightened by caching data.
 
 ### Stateless web tier
@@ -415,7 +415,7 @@ Figure 1-14 shows the updated design with a stateless web tier.
 
 In Figure 1-14, we _move the session data out of the web tier and store them in
 the persistent data store_. The shared data store could be a relational
-database, Memcached/Redis, #NoSQL, etc. The #NoSQL data store is chosen as it is
+database,  #Memcached, #Redis, #NoSQL, etc. The #NoSQL data store is chosen as it is
 easy to scale. Autoscaling means adding or removing web servers automatically
 based on the traffic load. After the state data is removed out of web servers,
 auto-scaling of the web tier is easily achieved by adding or removing servers
@@ -449,7 +449,7 @@ setup:
   correct data center. GeoDNS can be used to direct traffic to the nearest data
   center depending on where a user is located.
 - __Data synchronization__: Users from different regions could use different
-  local databases or caches. In #failover cases, traffic might be routed to a
+  local databases or  #caches. In #failover cases, traffic might be routed to a
   data center where data is unavailable. A common strategy is to replicate data
   across multiple data centers. A previous study shows how Netflix implements
   asynchronous multi-data center #replication [11].
@@ -519,9 +519,9 @@ new challenges. To conclude this chapter, we provide a summary of how we scale
 our system to support millions of users:
 - Keep web tier stateless
 - Build #redundancy at every tier
-- Cache data as much as you can
+-  #Cache data as much as you can
 - Support multiple data centers
-- Host static assets in CDN
+- Host static assets in  #CDN
 - Scale your data tier by sharding
 - Split tiers into individual services
 - Monitor your system and use automation tools
@@ -537,7 +537,7 @@ job!
 - [4] Multi-master #replication: https://en.wikipedia.org/wiki/Multi-master_replication
 - [5] NDB Cluster #Replication: Multi-Master and Circular #Replication: https://dev.mysql.com/doc/refman/5.7/en/mysql-cluster-replication-multi-master.html
 - [6] Caching Strategies and How to Choose the Right One: https://codeahoy.com/2017/08/11/caching-strategies-and-how-to-choose-the-right-one/
-- [7] R. Nishtala, "Facebook, Scaling Memcache at," 10th USENIX Symposium on Networked Systems Design and Implementation (NSDI ’13).
+- [7] R. Nishtala, "Facebook, Scaling  #Memcache at," 10th USENIX Symposium on Networked Systems Design and Implementation (NSDI ’13).
 - [8] Single point of failure: https://en.wikipedia.org/wiki/Single_point_of_failure
 - [9] Amazon CloudFront Dynamic Content Delivery: https://aws.amazon.com/cloudfront/dynamic-content/
 - [10] Configure Sticky Sessions for Your Classic #load_balancer: https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html
@@ -587,9 +587,9 @@ and slowness of different computer operations.
 
 | Operation Name                          | Time             |
 | --                                      | --               |
-| L1 cache reference                      | 0.5 ns           |
+| L1  #cache reference                      | 0.5 ns           |
 | Branch mispredict                       | 5 ns             |
-| L2 cache reference                      | 7 ns             |
+| L2  #cache reference                      | 7 ns             |
 | Mutex lock/unlock                       | 100 ns           |
 | Main memory reference                   | 100 ns           |
 | Compress 1K bytes with Zippy            | 10k ns = 10 µs   |
@@ -682,7 +682,7 @@ Here are a few tips to follow:
   might confuse yourself with this. Write down the units because “5 MB” helps
   to remove ambiguity.
 - __Commonly asked back-of-the-envelope estimations__: QPS, peak QPS, storage,
-  cache, number of servers, etc. You can practice these calculations when
+   #cache, number of servers, etc. You can practice these calculations when
   preparing for an interview. Practice makes perfect.
 
 Congratulations on getting this far! Now give yourself a pat on the back. Good
@@ -836,8 +836,8 @@ interviewer during the process.
   Treat your interviewer as a teammate and work together. Many good
   interviewers love to talk and get involved.
 - Draw __box diagrams__ with key components on the whiteboard or paper. This
-  might include clients (mobile/web), APIs, web servers, data stores, cache,
-  CDN, message queue, etc.
+  might include clients (mobile/web), APIs, web servers, data stores,  #cache,
+   #CDN, message queue, etc.
 - Do __back-of-the-envelope__ calculations to evaluate if your blueprint fits
   the scale constraints. Think out loud. Communicate with your interviewer if
   back-of-the-envelope is necessary before diving into it.
@@ -866,7 +866,7 @@ actually works. All the details will be explained in Chapter 11.
 At the high level, the design is divided into two flows: feed publishing and
 news feed building.
 - Feed publishing: when a user publishes a post, corresponding data is written
-  into cache/database, and the post will be populated into friends’ news feed.
+  into  #cache/database, and the post will be populated into friends’ news feed.
 - Newsfeed building: the news feed is built by aggregating friends’ posts in a
   reverse chronological order.
 
@@ -1048,7 +1048,7 @@ Here is a summary of the requirements for the system:
 - _Exception handling_. Show clear exceptions to users when their requests are
   throttled.
 - _High fault tolerance_. If there are any problems with the rate limiter (for
-  example, a cache server goes offline), it does not affect the entire system.
+  example, a  #cache server goes offline), it does not affect the entire system.
 
 ### Step 2 - Propose high-level design and get buy-in
 
@@ -1097,7 +1097,7 @@ gateway? There is no absolute answer.
 
 It depends on your company’s current technology stack, engineering resources,
 priorities, goals, etc. Here are a few general guidelines:
-- Evaluate your current technology stack, such as programming language, cache
+- Evaluate your current technology stack, such as programming language,  #cache
   service, etc. _Make sure your current programming language is efficient to
   implement rate limiting on the server-side_.
 - Identify the rate limiting algorithm that fits your business needs. When you
@@ -1249,7 +1249,7 @@ As discussed previously, the fixed window counter algorithm has a major issue: i
 more requests to go through at the edges of a window. The sliding window log algorithm
 fixes the issue. It works as follows:
 - The algorithm keeps track of request timestamps. Timestamp data is usually kept in
-cache, such as sorted sets of Redis [8].
+ #cache, such as sorted sets of  #Redis [8].
 - When a new request comes in, remove all the outdated timestamps. Outdated timestamps
 are defined as those older than the start of the current time window.
 - Add timestamp of the new request to the log.
@@ -1335,8 +1335,8 @@ IP address, etc. If the counter is larger than the limit, the request is
 disallowed.
 
 Where shall we store counters? Using the database is not a good idea due to
-slowness of disk access. In-memory cache is chosen because it is fast and
-supports time-based expiration strategy. For instance, Redis [11] is a popular
+slowness of disk access. In-memory  #cache is chosen because it is fast and
+supports time-based expiration strategy. For instance,  #Redis [11] is a popular
 option to implement rate limiting. It is an inmemory store that offers two
 commands: INCR and EXPIRE.
 - INCR: It increases the stored counter by 1.
@@ -1348,10 +1348,10 @@ as follows:
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/04.12.png) 
 - The client sends a request to rate limiting middleware.
 - Rate limiting middleware fetches the counter from the corresponding bucket in
-  Redis and checks if the limit is reached or not.
+   #Redis and checks if the limit is reached or not.
 - If the limit is reached, the request is rejected.
 - If the limit is not reached, the request is sent to API servers. Meanwhile,
-  the system increments the counter and saves it back to Redis.
+  the system increments the counter and saves it back to  #Redis.
 
 ### Step 3 - Design deep dive
 
@@ -1429,11 +1429,11 @@ Figure 4-13 presents a detailed design of the system.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/04.13.png) 
 
 - Rules are stored on the disk. Workers frequently pull rules from the disk and
-  store them in the cache.
+  store them in the  #cache.
 - When a client sends a request to the server, the request is sent to the rate
   limiter middleware first.
-- Rate limiter middleware loads rules from the cache. It fetches counters and
-  last request timestamp from Redis cache. Based on the response, the rate
+- Rate limiter middleware loads rules from the  #cache. It fetches counters and
+  last request timestamp from  #Redis  #cache. Based on the response, the rate
   limiter decides:
 - if the request is not rate limited, it is forwarded to API servers.
 - if the request is rate limited, the rate limiter returns 429 too many
@@ -1453,15 +1453,15 @@ There are two challenges:
 ##### Race condition
 
 As discussed earlier, rate limiter works as follows at the high-level:
-- Read the counter value from Redis.
+- Read the counter value from  #Redis.
 - Check if ( counter + 1 ) exceeds the threshold.
-- If not, increment the counter value by 1 in Redis.
+- If not, increment the counter value by 1 in  #Redis.
 
 Race conditions can happen in a highly concurrent environment as shown in
 Figure 4-14.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/04.14.png) 
 
-Assume the counter value in Redis is 3. If two requests concurrently read the
+Assume the counter value in  #Redis is 3. If two requests concurrently read the
 counter value before either of them writes the value back, each will increment
 the counter by one and write it back without checking the other thread. Both
 requests (threads) believe they have the correct counter value 4. However, the
@@ -1471,7 +1471,7 @@ __Locks are the most obvious solution for solving race condition__. However,
 locks will significantly slow down the system. Two strategies are commonly used
 to solve the problem:
 
-Lua script [13] and sorted sets data structure in Redis [8]. For readers
+Lua script [13] and sorted sets data structure in  #Redis [8]. For readers
 interested in these strategies, refer to the corresponding reference materials
 [8] [13].
 
@@ -1494,7 +1494,7 @@ properly.
 One possible solution is to use sticky sessions that allow a client to send
 traffic to the same rate limiter. This solution is not advisable because it is
 neither scalable nor flexible. A better approach is to use centralized data
-stores like Redis. The design is shown in Figure 4-16.
+stores like  #Redis. The design is shown in Figure 4-16.
 
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/04.16.png) 
 
@@ -1557,7 +1557,7 @@ if time allows:
   Layer 5: Session layer, Layer 6: Presentation layer, Layer 7: Application
   layer.
 - Avoid being rate limited. Design your client with best practices:
-  - Use client cache to avoid making frequent API calls.
+  - Use client  #cache to avoid making frequent API calls.
   - Understand the limit and do not send too many requests in a short time frame.
   - Include code to catch exceptions or errors so your client can gracefully recover from exceptions.
   - Add sufficient back off time to retry logic.
@@ -1573,13 +1573,13 @@ Reference materials
 https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-requestthrottling.html
 [6] Stripe rate limiters: https://stripe.com/blog/rate-limiters
 [7] Shopify REST Admin API rate limits: https://help.shopify.com/en/api/reference/restadmin-api-rate-limits
-[8] Better Rate Limiting With Redis Sorted Sets:
+[8] Better Rate Limiting With  #Redis Sorted Sets:
 https://engineering.classdojo.com/blog/2015/02/06/rolling-rate-limiter/
 [9] System Design — Rate limiter and Data modelling:
 https://medium.com/@saisandeepmopuri/system-design-rate-limiter-and-data-modelling9304b0d18250
 [10] How we built rate limiting capable of scaling to millions of domains:
 https://blog.cloudflare.com/counting-things-a-lot-of-different-things/
-[11] Redis website: https://redis.io/
+[11]  #Redis website: https:// #redis.io/
 [12] Lyft rate limiting: https://github.com/lyft/ratelimit
 [13] Scaling your API with rate limiters:
 https://gist.github.com/ptarjan/e38f45f2dfe601419ca3af937fff574d#request-rate-limiter
@@ -1596,7 +1596,7 @@ problem.
 
 ### The rehashing problem
 
-If you have n cache servers, a common way to balance the load is to use the
+If you have n  #cache servers, a common way to balance the load is to use the
 following hash method: `serverIndex = hash(key) % N`, where N is the size of
 the server pool.
 
@@ -1607,7 +1607,7 @@ have 4 servers and 8 string keys with their hashes.
 
 To fetch the server where a key is stored, we perform the modular operation
 f(key) % 4. For instance, hash(key0) % 4 = 1 means a client must contact server
-1 to fetch the cached data.
+1 to fetch the  #cached data.
 
 This approach works well when the size of the server pool is fixed, and the
 data distribution is even. However, problems arise when new servers are added,
@@ -1623,10 +1623,10 @@ Figure 5-2 shows the new distribution of keys based on Table 5-2.
 
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/05.02.png)
 
-As shown in Figure 5-2, most keys are redistributed, not just the ones
+As shown in Figure 5-2, most keys are  #redistributed, not just the ones
 originally stored in the offline server (server 1). This means that when server
-1 goes offline, most cache clients will connect to the wrong servers to fetch
-data. This causes a storm of cache misses. Consistent hashing is an effective
+1 goes offline, most  #cache clients will connect to the wrong servers to fetch
+data. This causes a storm of  #cache misses. Consistent hashing is an effective
 technique to mitigate this problem.
 
 ### Consistent hashing
@@ -1664,7 +1664,7 @@ Figure 5-5 shows that 4 servers are mapped on the hash ring.
 
 One thing worth mentioning is that hash function used here is different from
 the one in “the rehashing problem,” and there is no modular operation. As shown
-in Figure 5-6, 4 cache keys (key0, key1, key2, and key3) are hashed onto the
+in Figure 5-6, 4  #cache keys (key0, key1, key2, and key3) are hashed onto the
 hash ring
 
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/05.06.png)
@@ -1681,20 +1681,20 @@ is stored on server 2 and key3 is stored on server 3.
 ### Add a server
 
 Using the logic described above, adding a new server will only require
-redistribution of a fraction of keys.
+ #redistribution of a fraction of keys.
 
 In Figure 5-8, after a new server 4 is added, only key0 needs to be
-redistributed. k1, k2, and k3 remain on the same servers. Let us take a close
+ #redistributed. k1, k2, and k3 remain on the same servers. Let us take a close
 look at the logic. Before server 4 is added, key0 is stored on server 0. Now,
 key0 will be stored on server 4 because server 4 is the first server it
 encounters by going clockwise from key0’s position on the ring. The other keys
-are not redistributed based on consistent hashing algorithm.
+are not  #redistributed based on consistent hashing algorithm.
 
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/05.08.png)
 
 ### Remove a server
 
-When a server is removed, only a small fraction of keys require redistribution
+When a server is removed, only a small fraction of keys require  #redistribution
 with consistent hashing. In Figure 5-9, when server 1 is removed, only key1
 must be remapped to server 2. The rest of the keys are unaffected.
 
@@ -1769,17 +1769,17 @@ system requirements.
 ### Find affected keys
 
 When a server is added or removed, a fraction of data needs to be
-redistributed. How can we find the affected range to redistribute the keys?
+ #redistributed. How can we find the affected range to  #redistribute the keys?
 
 In Figure 5-14, server 4 is added onto the ring. The affected range starts from s4 (newly
 added node) and moves anticlockwise around the ring until a server is found (s3). Thus, keys
-located between s3 and s4 need to be redistributed to s4.
+located between s3 and s4 need to be  #redistributed to s4.
 
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/05.14.png)
 
 When a server (s1) is removed as shown in Figure 5-15, the affected range starts from s1
 (removed node) and moves anticlockwise around the ring until a server is found (s0). Thus,
-keys located between s0 and s1 must be redistributed to s2.
+keys located between s0 and s1 must be  #redistributed to s2.
 
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/05.15.png)
 
@@ -1788,7 +1788,7 @@ keys located between s0 and s1 must be redistributed to s2.
 In this chapter, we had an in-depth discussion about consistent hashing,
 including why it is needed and how it works. The benefits of consistent hashing
 include:
-- Minimized keys are redistributed when servers are added or removed.
+- Minimized keys are  #redistributed when servers are added or removed.
 - It is easy to scale horizontally because data are more evenly distributed.
 - Mitigate hotspot key problem. Excessive access to a specific shard could
   cause server overload. Imagine data for Katy Perry, Justin Bieber, and Lady
@@ -1830,7 +1830,7 @@ are a few examples:
 
 The value in a key-value pair can be strings, lists, objects, etc. The value is
 usually treated as an opaque object in key-value stores, such as Amazon dynamo
-[1], Memcached [2], Redis [3], etc.
+[1],  #Memcached [2],  #Redis [3], etc.
 
 Here is a data snippet in a key-value store:
 
@@ -2322,8 +2322,8 @@ specific node. Please note the proposed designs for write/read paths are
 _primary based on the architecture of Cassandra_ [8].
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/06.19.png)
 1. The _write request is persisted on a commit log file_.
-2. _Data is saved in the memory cache_.
-3. When the memory cache is full or reaches a predefined threshold, data is
+2. _Data is saved in the memory  #cache_.
+3. When the memory  #cache is full or reaches a predefined threshold, data is
    _flushed to SSTable [9] on disk_. 
 
 Note: A sorted-string table (SSTable) is a sorted list of <key, value> pairs.
@@ -2333,7 +2333,7 @@ material [9].
 ### Read path
 
 After a read request is directed to a specific node, it first checks if data is
-in the memory cache. If so, the data is returned to the client as shown in
+in the memory  #cache. If so, the data is returned to the client as shown in
 Figure 6-20.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/06.20.png)
 
@@ -2371,8 +2371,8 @@ store.
 
 ### Reference materials
 - [1] Amazon DynamoDB: https://aws.amazon.com/dynamodb/
-- [2] memcached: https://memcached.org/
-- [3] Redis: https://redis.io/
+- [2]  #memcached: https:// #memcached.org/
+- [3]  #Redis: https:// #redis.io/
 - [4] Dynamo: Amazon’s Highly Available Key-value Store: https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf
 - [5] Cassandra: https://cassandra.apache.org/
 - [6] Bigtable: A Distributed Storage System for Structured Data: https://static.googleusercontent.com/media/research.google.com/en//archive/bigtableosdi06.pdf
@@ -2668,7 +2668,7 @@ One thing worth discussing here is _301 redirect vs 302 redirect_.
 
 __301 redirect__. A 301 redirect shows that the requested URL is
 __“permanently” moved__ to the long URL. Since it is permanently redirected,
-the browser caches the response, and subsequent requests for the same URL will
+the browser  #caches the response, and subsequent requests for the same URL will
 not be sent to the URL shortening service.
 
 Instead, _requests are redirected to the long URL server directly_.
@@ -2833,7 +2833,7 @@ to refresh your memory.
 ### URL redirecting deep dive
 
 Figure 8-8 shows the detailed design of the URL redirecting. As there are more
-reads than writes, <shortURL, longURL> mapping is stored in a cache to improve
+reads than writes, <shortURL, longURL> mapping is stored in a  #cache to improve
 performance.
 
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/08.08.png)
@@ -2841,8 +2841,8 @@ performance.
 The flow of URL redirecting is summarized as follows:
 1. A user clicks a short URL link: https://tinyurl.com/zn9edcu
 2. The #load_balancer forwards the request to web servers.
-3. If a shortURL is already in the cache, return the longURL directly.
-4. If a shortURL is not in the cache, fetch the longURL from the database. If
+3. If a shortURL is already in the  #cache, return the longURL directly.
+4. If a shortURL is not in the  #cache, fetch the longURL from the database. If
    it is not in the database, it is likely a user entered an invalid shortURL.
 5. The longURL is returned to the user.
 
@@ -3231,8 +3231,8 @@ communicate with crawlers. It specifies what pages crawlers are allowed to
 download. Before attempting to crawl a web site, a crawler should check its
 corresponding robots.txt first and follow its rules.
 
-To avoid repeat downloads of robots.txt file, we cache the results of the file.
-The file is downloaded and saved to cache periodically. Here is a piece of
+To avoid repeat downloads of robots.txt file, we  #cache the results of the file.
+The file is downloaded and saved to  #cache periodically. Here is a piece of
 robots.txt file taken from https://www.amazon.com/robots.txt. Some of the
 directories like creatorhub are disallowed for Google bot.
 
@@ -3261,21 +3261,21 @@ smaller pieces; so, each downloader is responsible for a subset of the URLs.
 Figure 9-9 shows an example of a distributed crawl.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/09.09.png)
 
-#### 2. Cache #DNS Resolver
+#### 2.  #Cache #DNS Resolver
 
 #DNS Resolver is a bottleneck for crawlers because #DNS requests might take time
 due to the synchronous nature of many #DNS interfaces. #DNS response time ranges
 from 10ms to 200ms. Once a request to #DNS is carried out by a crawler thread,
 other threads are blocked until the first request is completed. Maintaining our
-#DNS cache to avoid calling #DNS frequently is an effective technique for speed
-optimization. Our #DNS cache keeps the domain name to IP address mapping and is
+#DNS  #cache to avoid calling #DNS frequently is an effective technique for speed
+optimization. Our #DNS  #cache keeps the domain name to IP address mapping and is
 updated periodically by cron jobs.
 
 #### 3. Locality
 
 Distribute crawl servers geographically. When crawl servers are closer to website hosts,
 crawlers experience faster download time. Design locality applies to most of the system
-components: crawl servers, cache, queue, storage, etc.
+components: crawl servers,  #cache, queue, storage, etc.
 
 #### 4. Short timeout
 
@@ -3535,7 +3535,7 @@ third-party services such as Jpush, PushY, etc are used there.
 Three problems are identified in this design:
 - Single point of failure (_SPOF_): A single notification server means SPOF.
 - _Hard to scale_: The notification system handles everything related to push
-  notifications in one server. It is challenging to scale databases, caches,
+  notifications in one server. It is challenging to scale databases,  #caches,
   and different notification processing components independently.
 - _Performance bottleneck_: Processing and sending notifications can be
   resource intensive.
@@ -3548,7 +3548,7 @@ system overload, especially during peak hours.
 
 After enumerating challenges in the initial design, we improve the design as
 listed below:
-- Move the database and cache out of the notification server.
+- Move the database and  #cache out of the notification server.
 - Add more notification servers and set up automatic horizontal scaling.
 - Introduce message queues to decouple the system components.
 
@@ -3568,7 +3568,7 @@ They provide the following functionalities:
 - Provide APIs for services to send notifications. Those APIs are only
   accessible internally or by verified clients to prevent spams.
 - Carry out basic validations to verify emails, phone numbers, etc.
-- Query the database or cache to fetch data needed to render a notification.
+- Query the database or  #cache to fetch data needed to render a notification.
 - Put notification data to message queues for parallel processing.
 
 Here is an example of the API to send an email:
@@ -3596,9 +3596,9 @@ Request body
 }
 ```
 
-#### Cache: 
+####  #Cache: 
 
-User info, device info, notification templates are cached.
+User info, device info, notification templates are  #cached.
 
 #### DB: 
 
@@ -3627,7 +3627,7 @@ Already explained in the initial design.
 Next, let us examine how every component works together to send a notification:
 1. A _service calls APIs provided by notification servers_ to send notifications.
 2. _Notification servers fetch metadata_ such as user info, device token, and
-   notification setting from the cache or database.
+   notification setting from the  #cache or database.
 3. A _notification event is sent to the corresponding queue_ for processing. For
    instance, an iOS push notification event is sent to the iOS PN queue.
 4. _Workers pull notification events_ from message queues.
@@ -3838,7 +3838,7 @@ Now you have gathered the requirements, we focus on designing the system.
 
 The design is divided into two flows: feed publishing and news feed building.
 - _Feed publishing_: when a user publishes a post, corresponding data is
-  written into cache and database. A post is populated to her friends’ news
+  written into  #cache and database. A post is populated to her friends’ news
   feed.
 - _Newsfeed building_: for simplicity, let us assume the news feed is built by
   aggregating friends’ posts in reverse chronological order.
@@ -3878,9 +3878,9 @@ Figure 11-2 shows the high-level design of the feed publishing flow.
   `/v1/me/feed?content=Hello&auth_token={auth_token}`
 - _Load balancer_: distribute traffic to web servers.
 - _Web servers_: web servers redirect traffic to different internal services.
-- _Post service_: persist post in the database and cache.
+- _Post service_: persist post in the database and  #cache.
 - _Fanout service_: push new content to friends’ news feed. Newsfeed data is
-  stored in the cache for fast retrieval.
+  stored in the  #cache for fast retrieval.
 - _Notification service_: inform friends that new content is available and send
   out push notifications.
 
@@ -3895,7 +3895,7 @@ high-level design:
   like this: `/v1/me/feed`.
 - #load_balancer: #load_balancer redirects traffic to web servers.
 - Web servers: web servers route requests to newsfeed service.
-- Newsfeed _service_: news feed service fetches news feed from the cache.
+- Newsfeed _service_: news feed service fetches news feed from the  #cache.
 - Newsfeed _cache_: store news feed IDs needed to render the news feed.
 
 ### Step 3 - Design deep dive
@@ -3929,7 +3929,7 @@ workflows and explore the best approach to support our system.
 
 ##### Fanout on write. 
 With this approach, news feed is pre-computed during write time. A new post is
-delivered to friends’ cache immediately after it is published.
+delivered to friends’  #cache immediately after it is published.
 
 Pros:
 - The news feed is generated in _real-time_ and can be pushed to friends
@@ -3976,23 +3976,23 @@ Let us take a close look at the fanout service as shown in Figure 11-5.
    managing friend relationship and friend recommendations. Interested readers
    wishing to learn more about this concept should refer to the reference
    material [2].
-2. _Get friends info from the user cache_. The system then filters out friends
+2. _Get friends info from the user  #cache_. The system then filters out friends
    based on user settings. For example, if you mute someone, her posts will not
    show up on your news feed even though you are still friends. Another reason
    why posts may not show is that a user could selectively share information
    with specific friends or hide it from other people.
 3. Send friends list and new post ID to the _message queue_.
 4. _Fanout workers fetch data from the message queue and store news feed data
-   in the news feed cache_. You can think of the news feed cache as a
+   in the news feed  #cache_. You can think of the news feed  #cache as a
    `<post_id, user_id>` mapping table. Whenever a new post is made, it will be
    appended to the news feed table as shown in Figure 11-6. The memory
    consumption can become very large if we store the entire user and post
-   objects in the cache. Thus, only IDs are stored. To keep the memory size
+   objects in the  #cache. Thus, only IDs are stored. To keep the memory size
    small, we set a configurable limit. The chance of a user scrolling through
    thousands of posts in news feed is slim. Most users are only interested in
-   the latest content, so the cache miss rate is low.
-5. Store <post_id, user_id > in news feed cache. Figure 11-6 shows an example
-   of what the news feed looks like in cache.
+   the latest content, so the  #cache miss rate is low.
+5. Store <post_id, user_id > in news feed  #cache. Figure 11-6 shows an example
+   of what the news feed looks like in  #cache.
 
 | post_id | user_id |
 | --      | --      |
@@ -4007,23 +4007,23 @@ As shown in Figure 11-7, media content (images, videos, etc.) are stored in _CDN
 for fast retrieval_. Let us look at how a client retrieves news feed.
 1. A _user sends a request_ to retrieve her news feed. The request looks like
    this: /v1/me/feed
-2. The _load balancer redistributes requests_ to web servers.
+2. The _load balancer  #redistributes requests_ to web servers.
 3. Web servers _call the news feed service_ to fetch news feeds.
-4. News feed service _gets a list post IDs_ from the news feed cache.
+4. News feed service _gets a list post IDs_ from the news feed  #cache.
 5. A user’s news feed is _more than just a list of feed IDs_. It contains
    username, profile picture, post content, post image, etc. Thus, the news
-   feed service fetches the complete user and post objects from caches (user
-   cache and post cache) to construct the fully hydrated news feed.
+   feed service fetches the complete user and post objects from  #caches (user
+    #cache and post  #cache) to construct the fully hydrated news feed.
 6. The fully hydrated news feed is _returned in JSON format_ back to the client
    for rendering.
 
-### Cache architecture
+###  #Cache architecture
 
-Cache is extremely important for a news feed system. We divide the cache tier
+ #Cache is extremely important for a news feed system. We divide the  #cache tier
 into 5 layers as shown in Figure 11-8.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/11.08.png)
 - _News Feed_: It stores IDs of news feeds.
-- _Content_: It stores every post data. Popular content is stored in hot cache.
+- _Content_: It stores every post data. Popular content is stored in hot  #cache.
 - _Social Graph: It stores user relationship data.
 - _Action_: It stores info about whether a user liked a post, replied a post,
   or took other actions on a post.
@@ -4053,7 +4053,7 @@ listed below.
 
 #### Other talking points:
 - Keep web tier stateless
-- Cache data as much as you can
+-  #Cache data as much as you can
 - Support multiple data centers
 - Lose couple components with message queues
 - Monitor key metrics. For instance, QPS during peak hours and latency while
@@ -4512,7 +4512,7 @@ sender and the recipient can read messages. Interested readers should refer to t
 the reference materials [9].
 - Caching messages on the client-side is effective to reduce the data transfer between the
 client and server.
-- Improve load time. Slack built a geographically distributed network to cache users’ data,
+- Improve load time. Slack built a geographically distributed network to  #cache users’ data,
 channels, etc. for better load time [10].
 - Error handling.
 - The chat server error. There might be hundreds of thousands, or even more persistent
@@ -4536,7 +4536,7 @@ https://www.theverge.com/2016/4/12/11415198/facebook-messenger-whatsapp-numberme
 [8] From nothing: the evolution of WeChat background system (Article in Chinese):
 https://www.infoq.cn/article/the-road-of-the-growth-weixin-background
 [9] End-to-end encryption: https://faq.whatsapp.com/en/android/28030015/
-[10] Flannel: An Application-Level Edge Cache to Make Slack Scale:
+[10] Flannel: An Application-Level Edge  #Cache to Make Slack Scale:
 https://slack.engineering/flannel-an-application-level-edge-cache-to-make-slack-scaleb8a6400e2f6b
 
 ## CHAPTER 13: DESIGN A SEARCH AUTOCOMPLETE SYSTEM
@@ -4717,7 +4717,7 @@ O(p) + O(c) + O(clogc)
 The above algorithm is straightforward. However, it is too slow because we need to traverse
 the entire trie to get top k results in the worst-case scenario. Below are two optimizations:
 1. Limit the max length of a prefix
-2. Cache top search queries at each node
+2.  #Cache top search queries at each node
 
 Let us look at these optimizations one by one.
 
@@ -4727,13 +4727,13 @@ Users rarely type a long search query into the search box. Thus, it is safe to s
 integer number, say 50. If we limit the length of a prefix, the time complexity for “Find the
 prefix” can be reduced from O(p) to O(small constant), aka O(1).
 
-Cache top search queries at each node
+ #Cache top search queries at each node
 
 To avoid traversing the whole trie, we store top k most frequently used queries at each node.
 
 Since 5 to 10 autocomplete suggestions are enough for users, k is a relatively small number.
 
-In our specific case, only the top 5 search queries are cached.
+In our specific case, only the top 5 search queries are  #cached.
 
 By caching top search queries at every node, we significantly reduce the time complexity to
 retrieve the top 5 queries. However, this design requires a lot of space to store top queries at
@@ -4745,7 +4745,7 @@ beer: 10].
 
 Let us revisit the time complexity of the algorithm after applying those two optimizations:
 1. Find the prefix node. Time complexity: O(1)
-2. Return top k. Since top k queries are cached, the time complexity for this step is O(1).
+2. Return top k. Since top k queries are  #cached, the time complexity for this step is O(1).
 
 As the time complexity for each of the steps is reduced to O(1), our algorithm takes only
 
@@ -4797,7 +4797,7 @@ Workers. Workers are a set of servers that perform asynchronous jobs at regular 
 
 They build the trie data structure and store it in Trie DB.
 
-Trie Cache. Trie Cache is a distributed cache system that keeps trie in memory for fast read.
+Trie  #Cache. Trie  #Cache is a distributed  #cache system that keeps trie in memory for fast read.
 
 It takes a weekly snapshot of the DB.
 
@@ -4822,11 +4822,11 @@ In the high-level design, query service calls the database directly to fetch the
 Figure 13-11 shows the improved design as previous design is inefficient.
 1. A search query is sent to the #load_balancer.
 2. The #load_balancer routes the request to API servers.
-3. API servers get trie data from Trie Cache and construct autocomplete suggestions for
+3. API servers get trie data from Trie  #Cache and construct autocomplete suggestions for
 the client.
-4. In case the data is not in Trie Cache, we replenish data back to the cache. This way, all
-subsequent requests for the same prefix are returned from the cache. A cache miss can
-happen when a cache server is out of memory or offline.
+4. In case the data is not in Trie  #Cache, we replenish data back to the  #cache. This way, all
+subsequent requests for the same prefix are returned from the  #cache. A  #cache miss can
+happen when a  #cache server is out of memory or offline.
 
 Query service requires lightning-fast speed. We propose the following optimizations:
 - AJAX request. For web applications, browsers usually send AJAX requests to fetch
@@ -4834,11 +4834,11 @@ autocomplete results. The main benefit of AJAX is that sending/receiving a
 request/response does not refresh the whole web page.
 - Browser caching. For many applications, autocomplete search suggestions may not
 change much within a short time. Thus, autocomplete suggestions can be saved in browser
-cache to allow subsequent requests to get results from the cache directly. Google search
-engine uses the same cache mechanism. Figure 13-12 shows the response header when
+ #cache to allow subsequent requests to get results from the  #cache directly. Google search
+engine uses the same  #cache mechanism. Figure 13-12 shows the response header when
 you type “system design interview” on the Google search engine. As you can see, Google
-caches the results in the browser for 1 hour. Please note: “private” in cache-control means
-results are intended for a single user and must not be cached by a shared cache. “maxage=3600” means the cache is valid for 3600 seconds, aka, an hour.
+ #caches the results in the browser for 1 hour. Please note: “private” in  #cache-control means
+results are intended for a single user and must not be  #cached by a shared  #cache. “maxage=3600” means the  #cache is valid for 3600 seconds, aka, an hour.
 - Data sampling: For a large-scale system, logging every search query requires a lot of
 processing power and storage. Data sampling is important. For instance, only 1 out of
 every N requests is logged by the system.
@@ -4871,7 +4871,7 @@ to 30. As you can see, the node and its ancestors have the “beer” value upda
 Delete
 
 We have to remove hateful, violent, sexually explicit, or dangerous autocomplete
-suggestions. We add a filter layer (Figure 13-14) in front of the Trie Cache to filter out
+suggestions. We add a filter layer (Figure 13-14) in front of the Trie  #Cache to filter out
 unwanted suggestions. Having a filter layer gives us the flexibility of removing results based
 on different filter rules. Unwanted suggestions are removed physically from the database
 asynchronically so the correct data set will be used to build trie in the next update cycle.
@@ -4914,7 +4914,7 @@ characters for all the writing systems of the world, modern and ancient” [5].
 Interviewer: What if top search queries in one country are different from others?
 
 In this case, we might build different tries for different countries. To improve the response
-time, we can store tries in CDNs.
+time, we can store tries in  #CDNs.
 
 Interviewer: How can we support the trending (real-time) search queries?
 
@@ -5033,26 +5033,26 @@ with the interviewer to make sure she is on the same page.
 - 10% of users upload 1 video per day.
 - Assume the average video size is 300 MB.
 - Total daily storage space needed: 5 million * 10% * 300 MB = 150TB
-- CDN cost.
-- When cloud CDN serves a video, you are charged for data transferred out of the
+-  #CDN cost.
+- When cloud  #CDN serves a video, you are charged for data transferred out of the
 
-CDN.
-- Let us use Amazon’s CDN CloudFront for cost estimation (Figure 14-2) [3]. Assume
+ #CDN.
+- Let us use Amazon’s  #CDN CloudFront for cost estimation (Figure 14-2) [3]. Assume
 100% of traffic is served from the United States. The average cost per GB is $0.02.
 
 For simplicity, we only calculate the cost of video streaming.
 - 5 million * 5 videos * 0.3GB * $0.02 = $150,000 per day.
 
-From the rough cost estimation, we know serving videos from the CDN costs lots of money.
+From the rough cost estimation, we know serving videos from the  #CDN costs lots of money.
 
-Even though cloud providers are willing to lower the CDN costs significantly for big
-customers, the cost is still substantial. We will discuss ways to reduce CDN costs in deep
+Even though cloud providers are willing to lower the  #CDN costs significantly for big
+customers, the cost is still substantial. We will discuss ways to reduce  #CDN costs in deep
 dive.
 
 Step 2 - Propose high-level design and get buy-in
 
 As discussed previously, the interviewer recommended leveraging existing cloud services
-instead of building everything from scratch. CDN and blob storage are the cloud services we
+instead of building everything from scratch.  #CDN and blob storage are the cloud services we
 will leverage. Some readers might ask why not building everything by ourselves? Reasons
 are listed below:
 - System design interviews are not about building everything from scratch. Within the
@@ -5060,19 +5060,19 @@ limited time frame, choosing the right technology to do a job right is more impo
 explaining how the technology works in detail. For instance, mentioning blob storage for
 storing source videos is enough for the interview. Talking about the detailed design for
 blob storage could be an overkill.
-- Building scalable blob storage or CDN is extremely complex and costly. Even large
+- Building scalable blob storage or  #CDN is extremely complex and costly. Even large
 companies like Netflix or Facebook do not build everything themselves. Netflix leverages
 
-Amazon’s cloud services [4], and Facebook uses Akamai’s CDN [5].
+Amazon’s cloud services [4], and Facebook uses Akamai’s  #CDN [5].
 
 At the high-level, the system comprises three components (Figure 14-3).
 
 Client: You can watch YouTube on your computer, mobile phone, and smartTV.
 
-CDN: Videos are stored in CDN. When you press play, a video is streamed from the CDN.
+ #CDN: Videos are stored in  #CDN. When you press play, a video is streamed from the  #CDN.
 
 API servers: Everything else except video streaming goes through API servers. This includes
-feed recommendation, generating video upload URL, updating metadata database and cache,
+feed recommendation, generating video upload URL, updating metadata database and  #cache,
 user signup, etc.
 
 In the question/answer session, the interviewer showed interests in two flows:
@@ -5093,7 +5093,7 @@ TV.
 - API servers: All user requests go through API servers except video streaming.
 - Metadata DB: Video metadata are stored in Metadata DB. It is sharded and replicated to
 meet performance and high availability requirements.
-- Metadata cache: For better performance, video metadata and user objects are cached.
+- Metadata  #cache: For better performance, video metadata and user objects are  #cached.
 - Original storage: A blob storage system is used to store original videos. A quotation in
 
 Wikipedia regarding blob storage shows that: “A Binary Large Object (BLOB) is a
@@ -5102,12 +5102,12 @@ collection of binary data stored as a single entity in a database management sys
 converting a video format to other formats (MPEG, HLS, etc), which provide the best
 video streams possible for different devices and bandwidth capabilities.
 - Transcoded storage: It is a blob storage that stores transcoded video files.
-- CDN: Videos are cached in CDN. When you click the play button, a video is streamed
-from the CDN.
+-  #CDN: Videos are  #cached in  #CDN. When you click the play button, a video is streamed
+from the  #CDN.
 - Completion queue: It is a message queue that stores information about video transcoding
 completion events.
 - Completion handler: This consists of a list of workers that pull event data from the
-completion queue and update metadata cache and database.
+completion queue and update metadata  #cache and database.
 
 Now that we understand each component individually, let us examine how the video
 uploading flow works. The flow is broken down into two processes running in parallel.
@@ -5123,10 +5123,10 @@ Figure 14-5 shows how to upload the actual video. The explanation is shown below
 3. Once transcoding is complete, the following two steps are executed in parallel:
 3a. Transcoded videos are sent to transcoded storage.
 3b. Transcoding completion events are queued in the completion queue.
-3a.1. Transcoded videos are distributed to CDN.
+3a.1. Transcoded videos are distributed to  #CDN.
 3b.1. Completion handler contains a bunch of workers that continuously pull event data
 from the queue.
-3b.1.a. and 3b.1.b. Completion handler updates the metadata database and cache when
+3b.1.a. and 3b.1.b. Completion handler updates the metadata database and  #cache when
 video transcoding is complete.
 4. API servers inform the client that the video is successfully uploaded and is ready for
 streaming.
@@ -5135,7 +5135,7 @@ Flow b: update the metadata
 
 While a file is being uploaded to the original storage, the client in parallel sends a request to
 update the video metadata as shown in Figure 14-6. The request contains video metadata,
-including file name, size, format, etc. API servers update the metadata cache and database.
+including file name, size, format, etc. API servers update the metadata  #cache and database.
 
 Video streaming flow
 
@@ -5161,7 +5161,7 @@ playback players. When we design a video streaming service, we have to choose th
 streaming protocol to support our use cases. To learn more about streaming protocols, here is
 an excellent article [7].
 
-Videos are streamed from CDN directly. The edge server closest to you will deliver the
+Videos are streamed from  #CDN directly. The edge server closest to you will deliver the
 video. Thus, there is very little latency. Figure 14-7 shows a high level of design for video
 streaming.
 
@@ -5246,7 +5246,7 @@ programmers write. Figure 14-12 is a simplified DAG representation which has 2 n
 1 edge:
 
 This DAG representation is generated from the two configuration files below (Figure 14-13):
-4. Cache data. The preprocessor is a cache for segmented videos. For better reliability, the
+4.  #Cache data. The preprocessor is a  #cache for segmented videos. For better reliability, the
 preprocessor stores GOPs and metadata in temporary storage. If video encoding fails, the
 system could use persisted data for retry operations.
 
@@ -5317,7 +5317,7 @@ Speed optimization: place upload centers close to users
 Another way to improve the upload speed is by setting up multiple upload centers across the
 globe (Figure 14-24). People in the United States can upload videos to the North America
 upload center, and people in China can upload videos to the Asian upload center. To achieve
-this, we use CDN as upload centers.
+this, we use  #CDN as upload centers.
 
 Speed optimization: parallelism everywhere
 
@@ -5325,7 +5325,7 @@ Achieving low latency requires serious efforts. Another optimization is to build
 coupled system and enable high parallelism.
 
 Our design needs some modifications to achieve high parallelism. Let us zoom in to the flow
-of how a video is transferred from original storage to the CDN. The flow is shown in Figure
+of how a video is transferred from original storage to the  #CDN. The flow is shown in Figure
 14-25, revealing that the output depends on the input of the previous step. This dependency
 makes parallelism difficult.
 
@@ -5368,24 +5368,24 @@ identifying information for your video. It can be your company logo or company n
 
 Cost-saving optimization
 
-CDN is a crucial component of our system. It ensures fast video delivery on a global scale.
+ #CDN is a crucial component of our system. It ensures fast video delivery on a global scale.
 
-However, from the back of the envelope calculation, we know CDN is expensive, especially
+However, from the back of the envelope calculation, we know  #CDN is expensive, especially
 when the data size is large. How can we reduce the cost?
 
 Previous research shows that YouTube video streams follow long-tail distribution [11] [12].
 
 It means a few popular videos are accessed frequently but many others have few or no
 viewers. Based on this observation, we implement a few optimizations:
-1. Only serve the most popular videos from CDN and other videos from our high capacity
+1. Only serve the most popular videos from  #CDN and other videos from our high capacity
 storage video servers (Figure 14-28).
 2. For less popular content, we may not need to store many encoded video versions. Short
 videos can be encoded on-demand.
 3. Some videos are popular only in certain regions. There is no need to distribute these
 videos to other regions.
-4. Build your own CDN like Netflix and partner with Internet Service Providers (ISPs).
+4. Build your own  #CDN like Netflix and partner with Internet Service Providers (ISPs).
 
-Building your CDN is a giant project; however, this could make sense for large streaming
+Building your  #CDN is a giant project; however, this could make sense for large streaming
 companies. An ISP can be Comcast, AT&T, Verizon, or other internet providers. ISPs are
 located all around the world and are close to users. By partnering with ISPs, you can
 improve the viewing experience and reduce the bandwidth charges.
@@ -5417,8 +5417,8 @@ entire video is passed to the server. The job of splitting videos is done on the
 - Task worker down: retry the task on a new worker.
 - API server down: API servers are stateless so requests will be directed to a different API
 server.
-- Metadata cache server down: data is replicated multiple times. If one node goes down,
-you can still access other nodes to fetch data. We can bring up a new cache server to
+- Metadata  #cache server down: data is replicated multiple times. If one node goes down,
+you can still access other nodes to fetch data. We can bring up a new  #cache server to
 replace the dead one.
 - Metadata DB server down:
 - Master is down. If the master is down, promote one of the slaves to act as the new
@@ -5649,7 +5649,7 @@ After putting files in S3, you can finally have a good night's sleep without wor
 data losses. To stop similar problems from happening in the future, you decide to do further
 research on areas you can improve. Here are a few areas you find:
 - #load_balancer: Add a #load_balancer to distribute network traffic. A #load_balancer ensures
-evenly distributed traffic, and if a web server goes down, it will redistribute the traffic.
+evenly distributed traffic, and if a web server goes down, it will  #redistribute the traffic.
 - Web servers: After a #load_balancer is added, more web servers can be added/removed
 easily, depending on the traffic load.
 - Metadata database: Move the database out of the server to avoid single point of failure.
@@ -5708,7 +5708,7 @@ servers are used for user authentication, managing user profile, updating file m
 Metadata database: It stores metadata of users, files, blocks, versions, etc. Please note that
 files are stored in the cloud and the metadata database only contains metadata.
 
-Metadata cache: Some of the metadata are cached for fast retrieval.
+Metadata  #cache: Some of the metadata are  #cached for fast retrieval.
 
 Notification service: It is a publisher/subscriber system that allows data to be transferred
 from notification service to clients as certain events happen. In our specific case, notification
@@ -5760,13 +5760,13 @@ High consistency requirement
 
 Our system requires strong consistency by default. It is unacceptable for a file to be shown
 differently by different clients at the same time. The system needs to provide strong
-consistency for metadata cache and database layers.
+consistency for metadata  #cache and database layers.
 
-Memory caches adopt an eventual consistency model by default, which means different
+Memory  #caches adopt an eventual consistency model by default, which means different
 replicas might have different data. To achieve strong consistency, we must ensure the
 following:
-- Data in cache replicas and the master is consistent.
-- Invalidate caches on database write to ensure cache and database hold the same value.
+- Data in  #cache replicas and the master is consistent.
+- Invalidate  #caches on database write to ensure  #cache and database hold the same value.
 
 Achieving strong consistency in a relational database is easy because it maintains the #ACID
 (Atomicity, Consistency, Isolation, Durability) properties [9]. However, #NoSQL databases do
@@ -5829,7 +5829,7 @@ if a file is added or edited by another client? There are two ways a client can 
 - If client A is online while a file is changed by another client, notification service will
 inform client A that changes are made somewhere so it needs to pull the latest data.
 - If client A is offline while a file is changed by another client, data will be saved to the
-cache. When the offline client is online again, it pulls the latest changes.
+ #cache. When the offline client is online again, it pulls the latest changes.
 
 Once a client knows a file is changed, it first requests metadata via API servers, then
 downloads blocks to construct the file. Figure 15-15 shows the detailed flow. Note, only the
@@ -5904,8 +5904,8 @@ jobs.
 files are not available in one region, they can be fetched from different regions.
 - API server failure: It is a stateless service. If an API server fails, the traffic is redirected
 to other API servers by a #load_balancer.
-- Metadata cache failure: Metadata cache servers are replicated multiple times. If one node
-goes down, you can still access other nodes to fetch data. We will bring up a new cache
+- Metadata  #cache failure: Metadata  #cache servers are replicated multiple times. If one node
+goes down, you can still access other nodes to fetch data. We will bring up a new  #cache
 server to replace the failed one.
 - Metadata DB failure.
 - Master down: If the master is down, promote one of the slaves to act as a new master
@@ -5986,7 +5986,7 @@ architectures behind different companies.
 - Facebook Chat: https://goo.gl/qzSiWC
 - Finding a needle in Haystack: Facebook’s photo storage: https://goo.gl/edj4FL
 - Serving Facebook Multifeed: Efficiency, performance gains through redesign: https://goo.gl/adFVMQ
-- Scaling Memcache at Facebook: https://goo.gl/rZiAhX
+- Scaling  #Memcache at Facebook: https://goo.gl/rZiAhX
 - TAO: Facebook’s Distributed Data Store for the Social Graph: https://goo.gl/Tk1DyH
 - Amazon Architecture: https://goo.gl/k4feoW
 - Dynamo: Amazon’s Highly Available Key-value Store: https://goo.gl/C7zxDL
