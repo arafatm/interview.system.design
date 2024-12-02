@@ -29,7 +29,7 @@ title: System Design Interview - An Insider’s Guide
 -  #Cache for temporary, (mostly) RO data
 -  #CDN for static assets
 -  #stateless/servers for autoscaling. Use persistent #nosql ( #redis) to store state
-- geoDNS for DC geo-routing
+-  #geoDNS for DC geo-routing
 - MQ for long-running tasks
 
 ### 2 Estimation
@@ -37,7 +37,7 @@ title: System Design Interview - An Insider’s Guide
 - Commonly back-of-the-envelope: QPS, peak QPS, storage,  #cache, number of servers
 
 ### 3 Interview
-__communicate with interviewer__
+_communicate with interviewer_
 1. Understand problem and establish design scope 
 2. Step 2 - Propose High-Level Design And Get Buy-In
 3. Design Deep Dive
@@ -56,8 +56,7 @@ To understand this setup, it is helpful to investigate the _request flow_ and _t
    not hosted by our servers.
 2. Internet Protocol (IP) address is returned to the browser or mobile app. In
    the example, IP address 15.125.23.214 is returned.
-3. Once the IP address is obtained, Hypertext Transfer Protocol (HTTP) [1]
-   requests are sent directly to your web server.
+3. Once the IP address is obtained, Hypertext Transfer Protocol (HTTP)  [(1) Hypertext Transfer Protocol](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) requests are sent directly to your web server.
 4. The web server returns HTML pages or JSON response for rendering.
 
 ### traffic source
@@ -88,6 +87,7 @@ Split Web/DB to allow independent scaling
 ![db](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.03.png)
 
 ### Which databases to use?
+- [(2) Should you go Beyond  #RDBMSs?](https://blog.teamtreehouse.com/should-you-go-beyond-relational-databases)
 - #RDBMS MySQL, Oracle database, PostgreSQL, etc.
 - #NoSQL CouchDB, Neo4j, Cassandra, HBase, Amazon DynamoDB, etc. 
   - Grouped into four categories: 
@@ -103,23 +103,23 @@ specific use cases, e.g.
 - You only need to _serialize and deserialize_ data (JSON, XML, YAML, etc.).
 - You need to store a _massive amount_ of data.
 
-### Vertical scaling vs horizontal scaling
+### #scaling/vertical vs #scaling/horizontal
 
-__Vertical scaling__, referred to as “scale up”, means the process of adding
+_#scaling/vertical_, referred to as “scale up”, means the process of adding
 more power (CPU, RAM, etc.) to your servers. 
 
-__Horizontal scaling__, referred to as “scale-out”, allows you to scale by
+_#scaling/horizontal_, referred to as “scale-out”, allows you to scale by
 adding more servers into your pool of resources.
 
-When traffic is low, vertical scaling is a great option, and the simplicity of vertical scaling is
+When traffic is low, #scaling/vertical is a great option, and the simplicity of #scaling/vertical is
 its main advantage. Unfortunately, it comes with serious limitations.
-- _Vertical scaling has a hard limit_. It is impossible to add unlimited CPU and
+- _#scaling/vertical has a hard limit_. It is impossible to add unlimited CPU and
   memory to a single server.
-- Vertical scaling _does not have #failover and #redundancy_. If one server goes
+- #scaling/vertical _does not have #failover and #redundancy_. If one server goes
   down, the website/app goes down with it completely.
 
-> Horizontal scaling is more desirable for large scale applications due to the
-> limitations of vertical scaling.
+> #scaling/horizontal is more desirable for large scale applications due to the
+> limitations of #scaling/vertical.
 
 In the previous design, users are connected to the web server directly. Users will unable to
 access the website if the web server is offline. In another scenario, if many users access the
@@ -164,6 +164,8 @@ look.
 Quoted from Wikipedia: “Database #replication can be used in many database
 management systems, usually with a master/slave relationship between the
 original (master) and the copies (slaves)” [3].
+- [(3) #Replication](https://en.wikipedia.org/wiki/Replication_(computing) )
+
 
 A _master database generally only supports write operations_. A _slave database
 gets copies of the data from the master database and only supports read
@@ -206,8 +208,8 @@ handle this case:
   the new master database. A new slave database will replace the old one for
   data #replication immediately.
 
-In production systems, promoting a new master is more complicated as the __data in a slave
-database might not be up to date__. The missing data needs to be updated by running data
+In production systems, promoting a new master is more complicated as the _data in a slave
+database might not be up to date_. The missing data needs to be updated by running data
 recovery scripts. Although some other #replication methods like multi-masters and circular
 #replication could help, those setups are more complicated; and their discussions are
 beyond the scope of this book. Interested readers should refer to the listed reference
@@ -242,8 +244,8 @@ The  #cache can mitigate this problem.
 
 ### #Cache tier
 
-The  #cache tier is a __temporary data store layer, much faster than the
-database__. The benefits of having a separate  #cache tier include better system
+The  #cache tier is a _temporary data store layer, much faster than the
+database_. The benefits of having a separate  #cache tier include better system
 performance, ability to reduce database workloads, and the ability to scale the
  #cache tier independently. Figure 1-7 shows a possible setup of a  #cache server:
 
@@ -257,6 +259,9 @@ client. This caching strategy is called a read-through  #cache.
 Other caching strategies are available depending on the data type, size, and
 access patterns. A previous study explains how different caching strategies
 work [6].
+- [(4) Multi-master #replication](https://en.wikipedia.org/wiki/Multi-master_replication)
+- [(5) NDB Cluster #Replication: Multi-Master and Circular #Replication](https://dev.mysql.com/doc/refman/5.7/en/mysql-cluster-replication-multi-master.html)
+- [(6) Caching Strategies and How to Choose the Right One](https://codeahoy.com/2017/08/11/caching-strategies-and-how-to-choose-the-right-one/)
 
 Interacting with  #cache servers is simple because most  #cache servers provide
 APIs for common programming languages. The following code snippet shows typical
@@ -271,32 +276,34 @@ SECONDS=1
 ### Considerations for using  #cache
 
 Here are a few considerations for using a  #cache system:
-- __Decide when__ to use  #cache. Consider using  #cache when data is _read
+- _Decide when_ to use  #cache. Consider using  #cache when data is _read
   frequently but modified infrequently_. Since  #cached data is stored in
   volatile memory, a  #cache server is _not ideal for persisting data_. For
   instance, if a  #cache server restarts, all the data in memory is lost. Thus,
   important data should be saved in persistent data stores.
-- __Expiration policy__. It is a good practice to implement an expiration
+- _Expiration policy_. It is a good practice to implement an expiration
   policy. Once  #cached data is expired, it is removed from the  #cache. _When
   there is no expiration policy,  #cached data will be stored in the memory
   permanently_. It is advisable not to make the expiration date too short as
   this will cause the system to reload data from the database too frequently.
   Meanwhile, it is advisable _not to make the expiration date too long as the
   data can become stale_.
-- __Consistency__: This involves keeping the data store and the  #cache in sync.
+- _Consistency_: This involves keeping the data store and the  #cache in sync.
   Inconsistency can happen because data-modifying operations on the data store
   and  #cache are not in a single transaction. When scaling across multiple
   regions, _maintaining consistency between the data store and  #cache is
   challenging_. For further details, refer to the paper titled “Scaling
    #Memcache at Facebook” published by Facebook [7].
-- __Mitigating failures__: A single  #cache server represents a potential single
+- (7) R. Nishtala, "Facebook, Scaling  #Memcache at," 10th USENIX Symposium on Networked Systems Design and Implementation (NSDI ’13).
+- _Mitigating failures_: A single  #cache server represents a potential single
   point of failure (_SPOF_), defined in Wikipedia as follows: “A single point
   of failure (SPOF) is a part of a system that, if it fails, will stop the
   entire system from working” [8]. As a result, _multiple  #cache servers across
   different data centers are recommended_ to avoid SPOF. Another recommended
   approach is to _overprovision the required memory by certain percentages_.
   This provides a buffer as the memory usage increases.
-- __Eviction Policy__: Once the  #cache is full, any requests to add items to the
+- [(8) Single point of failure](https://en.wikipedia.org/wiki/Single_point_of_failure)
+- _Eviction Policy_: Once the  #cache is full, any requests to add items to the
    #cache might cause existing items to be removed. This is called  #cache
   eviction. Least-recently-used (_LRU_) is the most popular  #cache eviction
   policy. Other eviction policies, such as the Least Frequently Used (_LFU_) or
@@ -342,18 +349,18 @@ Figure 1-10 demonstrates the  #CDN workflow.
 6. The image is returned from the  #cache as long as the TTL has not expired.
 
 Considerations of using a  #CDN
-- __Cost__:  #CDNs are run by third-party providers, and you are charged for data
+- _Cost_:  #CDNs are run by third-party providers, and you are charged for data
   transfers in and out of the  #CDN. Caching infrequently used assets provides no
   significant benefits so you should consider moving them out of the  #CDN.
-- Setting an appropriate __cache expiry__: For time-sensitive content, setting
+- Setting an appropriate _cache expiry_: For time-sensitive content, setting
   a  #cache/expiry time is important. The  #cache/expiry time should neither be too
   long nor too short. If it is too long, the content might no longer be fresh.
   If it is too short, it can cause repeat reloading of content from origin
   servers to the  #CDN.
-- __CDN fallback__: You should consider how your website/application copes with
+- _CDN fallback_: You should consider how your website/application copes with
    #CDN failure. If there is a temporary  #CDN outage, clients should be able to
   detect the problem and request resources from the origin.
-- __Invalidating files__: You can remove a file from the  #CDN before it expires
+- _Invalidating files_: You can remove a file from the  #CDN before it expires
   by performing one of the following operations:
   - Invalidate the  #CDN object using APIs provided by  #CDN vendors.
   - Use object versioning to serve a different version of the object. To
@@ -370,7 +377,7 @@ Figure 1-11 shows the design after the  #CDN and  #cache are added.
 
 ###  #Stateless web tier
 
-Now it is time to consider _scaling the web tier horizontally_. For this, we need to __move state (for instance user session data) out of the web tier__. A good practice is to store session data in the persistent storage such as  #RDBMS or #NoSQL. Each web server in the cluster can access state data from databases. This is called  #stateless/web tier.
+Now it is time to consider _scaling the web tier horizontally_. For this, we need to _move state (for instance user session data) out of the web tier_. A good practice is to store session data in the persistent storage such as  #RDBMS or #NoSQL. Each web server in the cluster can access state data from databases. This is called  #stateless/web tier.
 
 ###  #Stateful architecture
 
@@ -414,7 +421,7 @@ Your website grows rapidly and attracts a significant number of users internatio
 
 ### Data centers
 
-Figure 1-15 shows an example setup with two data centers. In normal operation, users are geoDNS-routed, also known as geo-routed, to the closest data center, with a split traffic of x% in US-East and (100 – x)% in US-West. #geoDNS is a #DNS service that allows domain names to be resolved to IP addresses based on the location of a user.
+Figure 1-15 shows an example setup with two data centers. In normal operation, users are  #geoDNS routed, also known as _geo-routed_, to the closest data center, with a split traffic of x% in US-East and (100 – x)% in US-West. #geoDNS is a #DNS service that allows domain names to be resolved to IP addresses based on the location of a user.
 
 ![DC](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.15.png)
 
@@ -425,48 +432,33 @@ In Figure 1-16, data center 2 (US-West) is offline, and 100% of the traffic is r
 ![DC offline](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.16.png)
 
 Several _technical challenges_ must be resolved to achieve multi-data center setup:
-- __Traffic redirection__: Effective tools are needed to direct traffic to the correct data center. GeoDNS can be used to direct traffic to the nearest data center depending on where a user is located.
-- __Data synchronization__: Users from different regions could use different local databases or  #caches. In #failover cases, traffic might be routed to a data center where data is unavailable. A common strategy is to replicate data across multiple data centers. A previous study shows how Netflix implements asynchronous multi-data center #replication [(11) Active-Active for Multi-Regional Resiliency](https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b)
-- __Test and deployment__: With multi-data center setup, it is important to test your website/application at different locations. Automated deployment tools are vital to keep services consistent through all the data centers  [(11) Active-Active for Multi-Regional Resiliency](https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b)
+- _Traffic redirection_: Effective tools are needed to direct traffic to the correct data center. GeoDNS can be used to direct traffic to the nearest data center depending on where a user is located.
+- _Data synchronization_: Users from different regions could use different local databases or  #caches. In #failover cases, traffic might be routed to a data center where data is unavailable. A common strategy is to replicate data across multiple data centers. A previous study shows how Netflix implements asynchronous multi-data center #replication [(11) Active-Active for Multi-Regional Resiliency](https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b)
+- _Test and deployment_: With multi-data center setup, it is important to test your website/application at different locations. Automated deployment tools are vital to keep services consistent through all the data centers  [(11) Active-Active for Multi-Regional Resiliency](https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b)
  
 To further scale our system, we need to decouple different components of the
-system so they can be scaled independently. Messaging queue is a key strategy
+system so they can be scaled independently. Messaging  #queue is a key strategy
 employed by many realworld distributed systems to solve this problem.
 
-### Message queue
+### Message  #queue
 
-A message queue is a durable component, stored in memory, that supports
-asynchronous communication. It serves as a buffer and distributes asynchronous
-requests. The basic architecture of a message queue is simple. Input services,
-called __producers/publishers__, create messages, and publish them to a message
-queue. Other services or servers, called consumers/subscribers, connect to the
-queue, and perform actions defined by the messages. The model is shown in Figure 1-17.
+A message  #queue is a durable component, stored in memory, that supports asynchronous communication. It serves as a buffer and distributes asynchronous requests. The basic architecture of a message  #queue is simple. Input services, called _producers/publishers_, create messages, and publish them to a message #queue. Other services or servers, called _consumers/subscribers_, connect to the #queue, and perform actions defined by the messages. The model is shown in Figure 1-17.
 
 ![MQ](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.17.png)
 
-Decoupling makes the message queue a preferred architecture for building a
-scalable and reliable application. With the message queue, the _producer can
-post a message to the queue when the consumer is unavailable to process it_.
-The consumer can read messages from the queue even when the producer is
-unavailable.
+Decoupling makes the message  #queue a preferred architecture for building a scalable and reliable application. With the message  #queue, the _producer can post a message to the  #queue when the consumer is unavailable to process it_. The consumer can read messages from the  #queue even when the producer is unavailable.
 
-Consider the following use case: your application supports photo customization, including
-cropping, sharpening, blurring, etc. Those customization tasks take time to
-complete. In Figure 1-18, web servers publish photo processing jobs to the
-message queue. Photo processing workers pick up jobs from the message queue and
-asynchronously perform photo customization tasks. The producer and the consumer
-can be scaled independently. When the size of the queue becomes large, more
-workers are added to reduce the processing time.
+Consider the following use case: your application supports photo customization, including cropping, sharpening, blurring, etc. Those customization tasks take time to complete. In Figure 1-18, web servers publish photo processing jobs to the message  #queue. Photo processing workers pick up jobs from the message  #queue and asynchronously perform photo customization tasks. The producer and the consumer can be scaled independently. When the size of the  #queue becomes large, more workers are added to reduce the processing time.
 
-However, if the queue is empty most of the time, the number of workers can be reduced.
+However, if the  #queue is empty most of the time, the number of workers can be reduced.
 
 ![MQ Photos](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.18.png)
 
-### Adding message queues and different tools
+### Adding message  #queues and different tools
 
 Figure 1-19 shows the updated design. Due to the space constraint, only one
 data center is shown in the figure.
-1. The design includes a message queue, which helps to make the system more
+1. The design includes a message  #queue, which helps to make the system more
    loosely coupled and failure resilient.
 2. Logging, monitoring, metrics, and automation tools are included.
 
@@ -477,17 +469,11 @@ scale the data tier.
 
 ### Database scaling
 
-There are two broad approaches for database scaling: __vertical scaling and horizontal scaling__.
+There are two broad approaches for database scaling: #scaling/vertical and #scaling/horizontal.
 
 ### Millions of users and beyond
 
-Scaling a system is an __iterative process__. Iterating on what we have learned
-in this chapter could get us far. More fine-tuning and new strategies are
-needed to scale beyond millions of users. For example, you might need to
-optimize your system and decouple the system to even smaller services. All the
-techniques learned in this chapter should provide a good foundation to tackle
-new challenges. To conclude this chapter, we provide a summary of how we scale
-our system to support millions of users:
+Scaling a system is an _iterative process_. Iterating on what we have learned in this chapter could get us far. More fine-tuning and new strategies are needed to scale beyond millions of users. For example, you might need to optimize your system and decouple the system to even smaller services. All the techniques learned in this chapter should provide a good foundation to tackle new challenges. To conclude this chapter, we provide a summary of how we scale our system to support millions of users:
 - Keep web tier  #stateless
 - Build #redundancy at every tier
 -  #Cache data as much as you can
@@ -500,22 +486,12 @@ our system to support millions of users:
 Congratulations on getting this far! Now give yourself a pat on the back. Good
 job!
 
-### Reference materials
-
-- [1] Hypertext Transfer Protocol: https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol
-- [2] Should you go Beyond  #RDBMSs?: https://blog.teamtreehouse.com/should-you-go-beyond-relational-databases
-- [3] #Replication: https://en.wikipedia.org/wiki/Replication_(computing) 
-- [4] Multi-master #replication: https://en.wikipedia.org/wiki/Multi-master_replication
-- [5] NDB Cluster #Replication: Multi-Master and Circular #Replication: https://dev.mysql.com/doc/refman/5.7/en/mysql-cluster-replication-multi-master.html
-- [6] Caching Strategies and How to Choose the Right One: https://codeahoy.com/2017/08/11/caching-strategies-and-how-to-choose-the-right-one/
-- [7] R. Nishtala, "Facebook, Scaling  #Memcache at," 10th USENIX Symposium on Networked Systems Design and Implementation (NSDI ’13).
-- [8] Single point of failure: https://en.wikipedia.org/wiki/Single_point_of_failure
-- [9] Amazon CloudFront Dynamic Content Delivery: https://aws.amazon.com/cloudfront/dynamic-content/
-- [10] Configure Sticky Sessions for Your Classic #load_balancer: https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html
-- [11] Active-Active for Multi-Regional Resiliency: https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b
-- [12] Amazon EC2 High Memory Instances: https://aws.amazon.com/ec2/instance-types/high-memory/
-- [13] What it takes to run Stack Overflow: http://nickcraver.com/blog/2013/11/22/what-it-takes-to-run-stack-overflow
-- [14] What The Heck Are You Actually Using #NoSQL For: http://highscalability.com/blog/2010/12/6/what-the-heck-are-you-actually-using-nosqlfor.html
+- [(9) Amazon CloudFront Dynamic Content Delivery](https://aws.amazon.com/cloudfront/dynamic-content/)
+- [(10) Configure Sticky Sessions for Your Classic #load_balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html)
+- [(11) Active-Active for Multi-Regional Resiliency](https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b)
+- [(12) Amazon EC2 High Memory Instances](https://aws.amazon.com/ec2/instance-types/high-memory/)
+- [(13) What it takes to run Stack Overflow](http://nickcraver.com/blog/2013/11/22/what-it-takes-to-run-stack-overflow)
+- [(14) What The Heck Are You Actually Using #NoSQL For](http://highscalability.com/blog/2010/12/6/what-the-heck-are-you-actually-using-nosqlfor.html)
 
 ## CHAPTER 2: BACK-OF-THE-ENVELOPE ESTIMATION
 
@@ -529,8 +505,8 @@ numbers to get a good feel for which designs will meet your requirements” [1].
 
 You need to have a good sense of scalability basics to effectively carry out
 back-of-theenvelope estimation. The following concepts should be well
-understood: __power of two__ [2], __latency__ numbers every programmer should
-know, and __availability__ numbers.
+understood: _power of two_ [2], _latency_ numbers every programmer should
+know, and _availability_ numbers.
 
 ### Power of two
 
@@ -594,7 +570,7 @@ a desirably long period of time. High availability is measured as a percentage,
 with 100% means a service that has 0 downtime. Most services fall between 99%
 and 100%.
 
-A service level agreement (__SLA__) is a commonly used term for service providers.
+A service level agreement (_SLA_) is a commonly used term for service providers.
 This is an agreement between you (the service provider) and your customer, and
 this agreement formally defines the level of uptime your service will deliver.
 Cloud providers Amazon [4], Google [5] and Microsoft [6] set their SLAs at
@@ -652,7 +628,7 @@ Here are a few tips to follow:
 - Label your units. When you write down “5”, does it mean 5 KB or 5 MB? You
   might confuse yourself with this. Write down the units because “5 MB” helps
   to remove ambiguity.
-- __Commonly asked back-of-the-envelope estimations__: QPS, peak QPS, storage,
+- _Commonly asked back-of-the-envelope estimations_: QPS, peak QPS, storage,
    #cache, number of servers, etc. You can practice these calculations when
   preparing for an interview. Practice makes perfect.
 
@@ -803,13 +779,13 @@ interviewer might look like this:
 In this step, we aim to develop a high-level design and reach an agreement with
 the interviewer on the design. It is a great idea to collaborate with the
 interviewer during the process.
-- Come up with an __initial blueprint__ for the design. Ask for __feedback__.
+- Come up with an _initial blueprint_ for the design. Ask for _feedback_.
   Treat your interviewer as a teammate and work together. Many good
   interviewers love to talk and get involved.
-- Draw __box diagrams__ with key components on the whiteboard or paper. This
+- Draw _box diagrams_ with key components on the whiteboard or paper. This
   might include clients (mobile/web), APIs, web servers, data stores,  #cache,
-   #CDN, message queue, etc.
-- Do __back-of-the-envelope__ calculations to evaluate if your blueprint fits
+   #CDN, message  #queue, etc.
+- Do _back-of-the-envelope_ calculations to evaluate if your blueprint fits
   the scale constraints. Think out loud. Communicate with your interviewer if
   back-of-the-envelope is necessary before diving into it.
 
@@ -952,10 +928,10 @@ guide on distributing your time in a 45- minute interview session. Please
 remember this is a rough estimate, and the actual time distribution depends on
 the scope of the problem and the requirements from the interviewer.
 
-- Step 1 __Understand the problem and establish design scope__: 3 - 10 minutes
-- Step 2 __Propose high-level design and get buy-in__: 10 - 15 minutes
-- Step 3 __Design deep dive__: 10 - 25 minutes
-- Step 4 __Wrap__: 3 - 5 minutes
+- Step 1 _Understand the problem and establish design scope_: 3 - 10 minutes
+- Step 2 _Propose high-level design and get buy-in_: 10 - 15 minutes
+- Step 3 _Design deep dive_: 10 - 25 minutes
+- Step 4 _Wrap_: 3 - 5 minutes
 
 ## CHAPTER 4: DESIGN A RATE LIMITER
 
@@ -970,19 +946,19 @@ calls are blocked. Here are a few examples:
 
 In this chapter, you are asked to design a rate limiter. Before starting the
 design, we first look at the benefits of using an API rate limiter:
-- __Prevent resource starvation caused by Denial of Service (DoS)__ attack [1].
+- _Prevent resource starvation caused by Denial of Service (DoS)_ attack [1].
   Almost all APIs published by large tech companies enforce some form of rate
   limiting. For example, Twitter limits the number of tweets to 300 per 3 hours
   [2]. Google docs APIs have the following default limit: 300 per user per 60
   seconds for read requests [3]. A rate limiter prevents DoS attacks, either
   intentional or unintentional, by blocking the excess calls.
-- __Reduce cost__. Limiting excess requests means fewer servers and allocating
+- _Reduce cost_. Limiting excess requests means fewer servers and allocating
   more resources to high priority APIs. Rate limiting is extremely important
   for companies that use paid third party APIs. For example, you are charged on
   a per-call basis for the following external APIs: check credit, make a
   payment, retrieve health records, etc. Limiting the number of calls is
   essential to reduce costs.
-- __Prevent servers from being overloaded__. To reduce server load, a rate
+- _Prevent servers from being overloaded_. To reduce server load, a rate
   limiter is used to filter out excess requests caused by bots or users’
   misbehavior.
 
@@ -1057,7 +1033,7 @@ sent too many requests.
 ![rate-limiting](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/04.03.png)
 
 Cloud microservices [4] have become widely popular and rate limiting is usually
-implemented within a component called __API gateway__. API gateway is a fully
+implemented within a component called _API gateway_. API gateway is a fully
 managed service that supports rate limiting, SSL termination, authentication,
 IP whitelisting, servicing static content, etc. For now, we only need to know
 that the API gateway is a middleware that supports rate limiting.
@@ -1102,7 +1078,7 @@ understood and commonly used by internet companies. Both Amazon [5] and Stripe
 [6] use this algorithm to throttle their API requests.
 
 The token bucket algorithm work as follows:
-- A token bucket is a container that has __pre-defined capacity__. 
+- A token bucket is a container that has _pre-defined capacity_. 
 - Tokens are put in the bucket at preset rates periodically. 
 - Once the bucket is full, no more tokens are added. As shown in Figure 4-4,
   the token bucket capacity is 4. The refiller puts 2 tokens into the bucket
@@ -1149,17 +1125,17 @@ Cons:
 
 The leaking bucket algorithm is similar to the token bucket except that
 requests are processed at a fixed rate. It is usually implemented with a
-first-in-first-out (__FIFO__) queue. The algorithm works as follows:
-- When a request arrives, the system checks if the queue is full. If it is not
-  full, the request is added to the queue.
+first-in-first-out (_FIFO_)  #queue. The algorithm works as follows:
+- When a request arrives, the system checks if the  #queue is full. If it is not
+  full, the request is added to the  #queue.
 - Otherwise, the request is dropped.
-- Requests are pulled from the queue and processed at regular intervals.
+- Requests are pulled from the  #queue and processed at regular intervals.
 
 Figure 4-7 explains how the algorithm works.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/04.07.png)
 
 Leaking bucket algorithm takes the following two parameters:
-- _Bucket size_: it is equal to the queue size. The queue holds the requests to
+- _Bucket size_: it is equal to the  #queue size. The  #queue holds the requests to
   be processed at a fixed rate.
 - _Outflow rate_: it defines how many requests can be processed at a fixed
   rate, usually in seconds.
@@ -1167,12 +1143,12 @@ Leaking bucket algorithm takes the following two parameters:
 Shopify, an ecommerce company, uses leaky buckets for rate-limiting [7].
 
 Pros:
-- Memory efficient given the limited queue size.
+- Memory efficient given the limited  #queue size.
 - Requests are processed at a fixed rate therefore it is suitable for use cases
   that a stable outflow rate is needed.
 
 Cons:
-- A burst of traffic fills up the queue with old requests, and if they are not
+- A burst of traffic fills up the  #queue with old requests, and if they are not
   processed in time, recent requests will be rate limited.
 - There are two parameters in the algorithm. It might not be easy to tune them
   properly.
@@ -1409,7 +1385,7 @@ Figure 4-13 presents a detailed design of the system.
 - if the request is not rate limited, it is forwarded to API servers.
 - if the request is rate limited, the rate limiter returns 429 too many
   requests error to the client. In the meantime, the request is either dropped
-  or forwarded to the queue.
+  or forwarded to the  #queue.
 
 #### Rate limiter in a distributed environment
 
@@ -1438,7 +1414,7 @@ the counter by one and write it back without checking the other thread. Both
 requests (threads) believe they have the correct counter value 4. However, the
 correct counter value should be 5.
 
-__Locks are the most obvious solution for solving race condition__. However,
+_Locks are the most obvious solution for solving race condition_. However,
 locks will significantly slow down the system. Two strategies are commonly used
 to solve the problem:
 
@@ -1560,7 +1536,7 @@ https://gist.github.com/ptarjan/e38f45f2dfe601419ca3af937fff574d#request-rate-li
 
 ## CHAPTER 5: DESIGN CONSISTENT HASHING
 
-To achieve horizontal scaling, it is important to distribute requests/data
+To achieve #scaling/horizontal, it is important to distribute requests/data
 efficiently and evenly across servers. Consistent hashing is a commonly used
 technique to achieve this goal. But first, let us take an in-depth look at the
 problem.
@@ -1836,7 +1812,7 @@ key-value store that comprises of the following characteristics:
 Developing a key-value store that resides in a single server is easy. An
 intuitive approach is to store key-value pairs in a hash table, which keeps
 everything in memory. Even though memory access is fast, fitting everything in
-memory may be impossible due to the space constraint. Two __optimizations__ can be
+memory may be impossible due to the space constraint. Two _optimizations_ can be
 done to fit more data in a single server:
 - Data _compression_
 - Store only _frequently used data_ in memory and the rest on disk
@@ -1848,8 +1824,8 @@ quickly. A distributed key-value store is required to support big data.
 
 A distributed key-value store is also called a distributed hash table, which
 distributes keyvalue pairs across many servers. When designing a distributed
-system, it is important to understand __CAP (Consistency, Availability, Partition
-Tolerance) theorem__.
+system, it is important to understand _CAP (Consistency, Availability, Partition
+Tolerance) theorem_.
 
 ### CAP theorem
 
@@ -1859,13 +1835,13 @@ provide more than two of these three guarantees:
 2. availability, and
 3. partition tolerance. 
 
-__Consistency__: consistency means all clients see the same data at the same
+_Consistency_: consistency means all clients see the same data at the same
 time no matter which node they connect to.
 
-__Availability__: availability means any client which requests data gets a
+_Availability_: availability means any client which requests data gets a
 response even if some of the nodes are down.
 
-__Partition Tolerance__: a partition indicates a communication break between
+_Partition Tolerance_: a partition indicates a communication break between
 two nodes. Partition tolerance means the system continues to operate despite network partitions.
 
 CAP theorem states that one of the three properties must be sacrificed to support 2 of the 3
@@ -1875,11 +1851,11 @@ properties as shown in Figure 6-1.
 
 Nowadays, key-value stores are classified based on the two CAP characteristics
 they support:
-- __CP__ (consistency and partition tolerance) systems: a CP key-value store
+- _CP_ (consistency and partition tolerance) systems: a CP key-value store
   supports consistency and partition tolerance while sacrificing availability.
-- __AP__ (availability and partition tolerance) systems: an AP key-value store
+- _AP_ (availability and partition tolerance) systems: an AP key-value store
   supports availability and partition tolerance while sacrificing consistency.
-- __CA__ (consistency and availability) systems: a CA key-value store supports
+- _CA_ (consistency and availability) systems: a CA key-value store supports
   consistency and availability while sacrificing partition tolerance. Since
   network failure is unavoidable, a distributed system must tolerate network
   partition. Thus, _a CA system cannot exist in real-world applications_.
@@ -1906,16 +1882,16 @@ n2, data cannot be propagated to n3. If data is written to n3 but not
 propagated to n1 and n2 yet, n1 and n2 would have stale data.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/06.03.png)
 
-If we choose consistency over availability __(CP system), we must block all
-write operations to n1 and n2 to avoid data inconsistency__ among these three
+If we choose consistency over availability _(CP system), we must block all
+write operations to n1 and n2 to avoid data inconsistency_ among these three
 servers, which makes the system unavailable. _Bank systems_ usually have
 extremely high consistent requirements. For example, it is crucial for a bank
 system to display the most up-to-date balance info. If inconsistency occurs due
 to a network partition, the bank system returns an error before the
 inconsistency is resolved.
 
-However, if we choose availability over consistency __(AP system), the system
-keeps accepting reads__, even though it _might return stale data_. For writes,
+However, if we choose availability over consistency _(AP system), the system
+keeps accepting reads_, even though it _might return stale data_. For writes,
 n1 and n2 will keep accepting writes, and data will be synced to n3 when the
 network partition is resolved.
 
@@ -1937,7 +1913,7 @@ used to build a key-value store:
 - Read path
 
 The content below is largely based on three popular key-value store systems:
-__Dynamo__ [4], __Cassandra__ [5], and __BigTable__ [6].
+_Dynamo_ [4], _Cassandra_ [5], and _BigTable_ [6].
 
 ### Data partition
 
@@ -2008,14 +1984,14 @@ and s2. A coordinator acts as a proxy between the client and the nodes.
 The configuration of W, R and N is a typical tradeoff between latency and
 consistency. 
 
-If __W = 1 or R = 1, an operation is returned quickly__ because a coordinator
+If _W = 1 or R = 1, an operation is returned quickly_ because a coordinator
 only needs to wait for a response from any of the replicas. 
 
-If __W or R > 1, the system offers better consistency__; however, the query
+If _W or R > 1, the system offers better consistency_; however, the query
 _will be slower_ because the coordinator must wait for the response from the
 slowest replica.
 
-If __W + R > N, strong consistency is guaranteed__ because there must be at
+If _W + R > N, strong consistency is guaranteed_ because there must be at
 least one overlapping node that has the latest data to ensure consistency.
 
 How to configure N, W, and R to fit our use cases? Here are some of the
@@ -2033,12 +2009,12 @@ desired level of consistency.
 Consistency model is other important factor to consider when designing a
 key-value store. A consistency model defines the degree of data consistency,
 and a wide spectrum of possible consistency models exist:
-- __Strong consistency__: any read operation returns a value corresponding to
+- _Strong consistency_: any read operation returns a value corresponding to
   the result of the most updated write data item. A client never sees
   out-of-date data.
-- __Weak consistency__: subsequent read operations may not see the most updated
+- _Weak consistency_: subsequent read operations may not see the most updated
   value.
-- __Eventual consistency__: this is a specific form of weak consistency. Given
+- _Eventual consistency_: this is a specific form of weak consistency. Given
   enough time, all updates are propagated, and all replicas are consistent.
 
 Strong consistency is usually achieved by forcing a replica not to accept new reads/writes
@@ -2081,7 +2057,7 @@ detect conflicts and reconcile conflicts.
 A vector clock is a common technique to solve this problem. Let us examine how
 vector clocks work.
 
-A __vector clock__ is a [server, version] pair associated with a data item. It
+A _vector clock_ is a [server, version] pair associated with a data item. It
 can be used to check if one version precedes, succeeds, or in conflict with
 others.
 
@@ -2161,7 +2137,7 @@ inefficient when many servers are in the system.
 A better solution is to use decentralized failure detection methods like gossip
 protocol.
 
-__Gossip protocol__ works as follows:
+_Gossip protocol_ works as follows:
 - Each node maintains a _node membership list_, which contains member IDs and
   heartbeat counters.
 - Each node periodically _increments its heartbeat counter_.
@@ -2190,7 +2166,7 @@ to deploy certain mechanisms to ensure availability. In the strict quorum
 approach, read and write operations could be blocked as illustrated in the
 quorum consensus section.
 
-A technique called “__sloppy quorum__” [4] is used to improve availability.
+A technique called “_sloppy quorum_” [4] is used to improve availability.
 Instead of enforcing the quorum requirement, the system chooses the first W
 healthy servers for writes and first R healthy servers for reads on the hash
 ring. Offline servers are ignored.
@@ -2222,7 +2198,7 @@ Hash trees allow efficient and secure verification of the contents of large
 data structures”.
 
 Assuming key space is from 1 to 12, the following steps show how to build a
-__Merkle tree__.
+_Merkle tree_.
 
 Highlighted boxes indicate inconsistency.
 
@@ -2311,7 +2287,7 @@ Figure 6-20.
 If the data is not in memory, it will be retrieved from the disk instead. We
 need an efficient way to find out which SSTable contains the key. 
 
-__Bloom filter__ [10] is commonly used to solve this problem.
+_Bloom filter_ [10] is commonly used to solve this problem.
 
 The read path is shown in Figure 6-21 when data is not in memory.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/06.21.png)
@@ -2420,7 +2396,7 @@ However, this strategy has some _major drawbacks_:
 
 ### UUID
 
-A UUID is another easy way to obtain unique IDs. UUID is a __128-bit number__
+A UUID is another easy way to obtain unique IDs. UUID is a _128-bit number_
 used to identify information in computer systems. UUID has a very low
 probability of getting collusion.
 
@@ -2637,14 +2613,14 @@ The detailed communication between clients and servers is shown in Figure 8-2.
 
 One thing worth discussing here is _301 redirect vs 302 redirect_.
 
-__301 redirect__. A 301 redirect shows that the requested URL is
-__“permanently” moved__ to the long URL. Since it is permanently redirected,
+_301 redirect_. A 301 redirect shows that the requested URL is
+_“permanently” moved_ to the long URL. Since it is permanently redirected,
 the browser  #caches the response, and subsequent requests for the same URL will
 not be sent to the URL shortening service.
 
 Instead, _requests are redirected to the long URL server directly_.
 
-__302 redirect__. A 302 redirect means that the URL is __“temporarily” moved__
+_302 redirect_. A 302 redirect means that the URL is _“temporarily” moved_
 to the long URL, meaning that subsequent requests for the same URL will be sent
 to the URL shortening service first. Then, they are redirected to the long URL
 server.
@@ -2725,7 +2701,7 @@ As shown in Table 8-2, even the shortest hash value (from CRC32) is too long
 (more than 7 characters). How can we make it shorter?
 
 The first approach is to collect the first 7 characters of a hash value;
-however, this method can lead to __hash collisions__. To resolve hash
+however, this method can lead to _hash collisions_. To resolve hash
 collisions, we can recursively append a new predefined string until no more
 collision is discovered. This process is explained in Figure 8-5.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/08.05.png)
@@ -2733,7 +2709,7 @@ collision is discovered. This process is explained in Figure 8-5.
 This method can eliminate collision; however, it is _expensive to query_ the
 database to check if a shortURL exists for every request. 
 
-A technique called __bloom filters__ [2] can improve performance. A bloom
+A technique called _bloom filters_ [2] can improve performance. A bloom
 filter is a space-efficient probabilistic technique to test if an element is a
 member of a set. Refer to the reference material [2] for more details.
 
@@ -2973,7 +2949,7 @@ Most modern web crawlers split the crawl state into _two: to be downloaded and
 already downloaded_. The component that stores URLs to be downloaded is called
 the URL Frontier.
 
-You can refer to this as a First-in-First-out (FIFO) queue. For detailed
+You can refer to this as a First-in-First-out (FIFO)  #queue. For detailed
 information about the URL Frontier, refer to the deep dive.
 
 ### HTML Downloader
@@ -3092,13 +3068,13 @@ algorithms are DFS and BFS. However, _DFS is usually not a good choice because
 the depth of DFS can be very deep_.
 
 BFS is commonly used by web crawlers and is implemented by a first-in-first-out
-(FIFO) queue. In a FIFO queue, URLs are dequeued in the order they are
+(FIFO)  #queue. In a FIFO  #queue, URLs are dequeued in the order they are
 enqueued. However, this implementation has two problems:
 - Most links from the same web page are linked back to the same host. In Figure
   9-5, all the links in wikipedia.com are internal links, making the crawler
   busy processing URLs from the same host (wikipedia.com). When the crawler
   tries to download web pages in parallel, Wikipedia servers will be flooded
-  with requests. This is considered as __“impolite”__.
+  with requests. This is considered as _“impolite”_.
 - _Standard BFS does not take the priority of a URL into consideration_. The
   web is large and not every page has the same level of quality and importance.
   Therefore, we may want to prioritize URLs according to their page ranks, web
@@ -3129,16 +3105,16 @@ the same host. A delay can be added between two download tasks. The politeness
 constraint is implemented by maintain a mapping from website hostnames to
 download (worker) threads.
 
-Each downloader thread has a separate FIFO queue and only downloads URLs
-obtained from that queue. Figure 9-6 shows the design that manages politeness.
+Each downloader thread has a separate FIFO  #queue and only downloads URLs
+obtained from that  #queue. Figure 9-6 shows the design that manages politeness.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/09.06.png)
-- Queue router: It ensures that each queue (b1, b2, … bn) only contains URLs
+-  #Queue router: It ensures that each  #queue (b1, b2, … bn) only contains URLs
   from the same host.
-- Mapping table: It maps each host to a queue.
-- FIFO queues b1, b2 to bn: Each queue contains URLs from the same host.
-- Queue selector: Each worker thread is mapped to a FIFO queue, and it only
-  downloads URLs from that queue. The queue selection logic is done by the
-  Queue selector.
+- Mapping table: It maps each host to a  #queue.
+- FIFO  #queues b1, b2 to bn: Each  #queue contains URLs from the same host.
+-  #Queue selector: Each worker thread is mapped to a FIFO  #queue, and it only
+  downloads URLs from that  #queue. The  #queue selection logic is done by the
+   #Queue selector.
 - Worker thread 1 to N. A worker thread downloads web pages one by one from the
   same host. A delay can be added between two download tasks.
 
@@ -3156,15 +3132,15 @@ Refer to the reference materials [5] [10] for in-depth information about this co
 Figure 9-7 shows the design that manages URL priority.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/09.07.png)
 - Prioritizer: It takes URLs as input and computes the priorities.
-- Queue f1 to fn: Each queue has an assigned priority. Queues with high
+-  #Queue f1 to fn: Each  #queue has an assigned priority.  #Queues with high
   priority are selected with higher probability.
-- Queue selector: Randomly choose a queue with a bias towards queues with
+-  #Queue selector: Randomly choose a  #queue with a bias towards  #queues with
   higher priority.
 
 Figure 9-8 presents the URL frontier design, and it contains two modules:
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/09.08.png)
-- Front queues: manage prioritization
-- Back queues: manage politeness
+- Front  #queues: manage prioritization
+- Back  #queues: manage politeness
 
 ### Freshness
 
@@ -3246,7 +3222,7 @@ updated periodically by cron jobs.
 
 Distribute crawl servers geographically. When crawl servers are closer to website hosts,
 crawlers experience faster download time. Design locality applies to most of the system
-components: crawl servers,  #cache, queue, storage, etc.
+components: crawl servers,  #cache,  #queue, storage, etc.
 
 #### 4. Short timeout
 
@@ -3329,7 +3305,7 @@ still miss many relevant talking points:
 - _Database #replication and sharding_: Techniques like #replication and sharding
   are used to improve the data layer availability, scalability, and
   reliability.
-- _Horizontal scaling_: For large scale crawl, hundreds or even thousands of
+- _#scaling/horizontal_: For large scale crawl, hundreds or even thousands of
   servers are needed to perform download tasks. The key is to keep servers
    #stateless.
 - _Availability, consistency, and reliability_: These concepts are at the core of
@@ -3520,8 +3496,8 @@ system overload, especially during peak hours.
 After enumerating challenges in the initial design, we improve the design as
 listed below:
 - Move the database and  #cache out of the notification server.
-- Add more notification servers and set up automatic horizontal scaling.
-- Introduce message queues to decouple the system components.
+- Add more notification servers and set up automatic #scaling/horizontal.
+- Introduce message  #queues to decouple the system components.
 
 Figure 10-10 shows the improved high-level design.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/10.10.png)
@@ -3540,7 +3516,7 @@ They provide the following functionalities:
   accessible internally or by verified clients to prevent spams.
 - Carry out basic validations to verify emails, phone numbers, etc.
 - Query the database or  #cache to fetch data needed to render a notification.
-- Put notification data to message queues for parallel processing.
+- Put notification data to message  #queues for parallel processing.
 
 Here is an example of the API to send an email:
 
@@ -3575,16 +3551,16 @@ User info, device info, notification templates are  #cached.
 
 It stores data about user, notification, settings, etc.
 
-#### Message queues: 
+#### Message  #queues: 
 
-They remove dependencies between components. Message queues serve as buffers
+They remove dependencies between components. Message  #queues serve as buffers
 when high volumes of notifications are to be sent out. Each notification type
-is assigned with a distinct message queue so an outage in one third-party
+is assigned with a distinct message  #queue so an outage in one third-party
 service will not affect other notification types.
 
 #### Workers: 
 
-Workers are a list of servers that pull notification events from message queues
+Workers are a list of servers that pull notification events from message  #queues
 and send them to the corresponding third-party services.
 
 #### Third-party services: 
@@ -3599,9 +3575,9 @@ Next, let us examine how every component works together to send a notification:
 1. A _service calls APIs provided by notification servers_ to send notifications.
 2. _Notification servers fetch metadata_ such as user info, device token, and
    notification setting from the  #cache or database.
-3. A _notification event is sent to the corresponding queue_ for processing. For
-   instance, an iOS push notification event is sent to the iOS PN queue.
-4. _Workers pull notification events_ from message queues.
+3. A _notification event is sent to the corresponding  #queue_ for processing. For
+   instance, an iOS push notification event is sent to the iOS PN  #queue.
+4. _Workers pull notification events_ from message  #queues.
 5. _Workers send notifications_ to third party services.
 6. _Third-party services send notifications_ to user devices.
 
@@ -3613,7 +3589,7 @@ explore the following in deep dive:
 - Reliability.
 - Additional component and considerations: notification template, notification
   settings, rate limiting, retry mechanism, security in push notifications,
-  monitor queued notifications and event tracking.
+  monitor  #queued notifications and event tracking.
 - Updated design.
 
 ### Reliability
@@ -3694,7 +3670,7 @@ could turn off notifications completely if we send too often.
 #### Retry mechanism
 
 When a third-party service fails to send a notification, the notification will
-be added to the message queue for retrying. If the problem persists, an alert
+be added to the message  #queue for retrying. If the problem persists, an alert
 will be sent out to developers.
 
 #### Security in push notifications
@@ -3704,12 +3680,12 @@ notification APIs [6]. Only authenticated or verified clients are allowed to
 send push notifications using our APIs. Interested users should refer to the
 reference material [6].
 
-#### Monitor queued notifications
+#### Monitor  #queued notifications
 
-A key metric to monitor is the total number of queued notifications. If the
+A key metric to monitor is the total number of  #queued notifications. If the
 number is large, the notification events are not processed fast enough by
 workers. To avoid delay in the notification delivery, more workers are needed.
-Figure 10-12 (credit to [7]) shows an example of queued messages to be
+Figure 10-12 (credit to [7]) shows an example of  #queued messages to be
 processed.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/10.12.png)
 
@@ -3731,7 +3707,7 @@ design.
 - The notification servers are equipped with two more critical features:
   _authentication and rate-limiting_.
 - We also add a _retry mechanism_ to handle notification failures. If the
-  system fails to send notifications, they are put back in the messaging queue
+  system fails to send notifications, they are put back in the messaging  #queue
   and the workers will retry for a predefined number of times.
 - Furthermore, _notification templates_ provide a consistent and efficient
   notification creation process.
@@ -3747,7 +3723,7 @@ online shopping payment confirmation.
 
 In this chapter, we described the design of a scalable notification system that
 supports multiple notification formats: push notification, SMS message, and
-email. We adopted message queues to decouple system components.
+email. We adopted message  #queues to decouple system components.
 
 Besides the high-level design, we dug deep into more components and
 optimizations.
@@ -3927,7 +3903,7 @@ Pros:
 Cons:
 - _Fetching the news feed is slow_ as the news feed is not pre-computed.
 
-We adopt a __hybrid approach__ to get benefits of both approaches and avoid
+We adopt a _hybrid approach_ to get benefits of both approaches and avoid
 pitfalls in them.
 
 Since fetching the news feed fast is crucial, we use a push model for the
@@ -3952,8 +3928,8 @@ Let us take a close look at the fanout service as shown in Figure 11-5.
    show up on your news feed even though you are still friends. Another reason
    why posts may not show is that a user could selectively share information
    with specific friends or hide it from other people.
-3. Send friends list and new post ID to the _message queue_.
-4. _Fanout workers fetch data from the message queue and store news feed data
+3. Send friends list and new post ID to the _message  #queue_.
+4. _Fanout workers fetch data from the message  #queue and store news feed data
    in the news feed  #cache_. You can think of the news feed  #cache as a
    `<post_id, user_id>` mapping table. Whenever a new post is made, it will be
    appended to the news feed table as shown in Figure 11-6. The memory
@@ -4015,7 +3991,7 @@ issues. To avoid duplicated discussion, only high-level talking points are
 listed below.
 
 #### Scaling the database:
-- Vertical scaling vs Horizontal scaling
+- #scaling/vertical vs #scaling/horizontal
 - SQL vs #NoSQL
 - Master-slave #replication
 - Read replicas
@@ -4026,7 +4002,7 @@ listed below.
 - Keep web tier  #stateless
 -  #Cache data as much as you can
 - Support multiple data centers
-- Lose couple components with message queues
+- Lose couple components with message  #queues
 - Monitor key metrics. For instance, QPS during peak hours and latency while
   users refreshing their news feed are interesting to monitor.
 
@@ -4274,7 +4250,7 @@ messages, etc. These cases should be supported by the data access layer.
 
 Selecting the correct storage system that supports all of our use cases is crucial. We
 recommend key-value stores for the following reasons:
-- Key-value stores allow easy horizontal scaling.
+- Key-value stores allow easy #scaling/horizontal.
 - Key-value stores provide very low latency to access data.
 -  #RDBMSs do not handle long tail [3] of data well. When the indexes grow
 large, random access is expensive.
@@ -4352,7 +4328,7 @@ flow.
 Figure 12-12 explains what happens when User A sends a message to User B.
 1. User A sends a chat message to Chat server 1.
 2. Chat server 1 obtains a message ID from the ID generator.
-3. Chat server 1 sends the message to the message sync queue.
+3. Chat server 1 sends the message to the message sync  #queue.
 4. The message is stored in a key-value store.
 5.a. If User B is online, the message is forwarded to Chat server 2 where User B is
 connected.
@@ -4386,9 +4362,9 @@ In comparison to the one-on-one chat, the logic of group chat is more complicate
 Figure 12-14 explains what happens when User A sends a message in a group chat. Assume
 there are 3 members in the group (User A, User B and user C). First, the message from User
 
-A is copied to each group member’s message sync queue: one for User B and the second for
+A is copied to each group member’s message sync  #queue: one for User B and the second for
 
-User C. You can think of the message sync queue as an inbox for a recipient. This design
+User C. You can think of the message sync  #queue as an inbox for a recipient. This design
 choice is good for small group chat because:
 - it simplifies message sync flow as each client only needs to check its own inbox to get
 new messages.
@@ -4399,7 +4375,7 @@ WeChat uses a similar approach, and it limits a group to 500 members [8]. Howeve
 groups with a lot of users, storing a message copy for each member is not acceptable.
 
 On the recipient side, a recipient can receive messages from multiple users. Each recipient
-has an inbox (message sync queue) which contains messages from different senders. Figure
+has an inbox (message sync  #queue) which contains messages from different senders. Figure
 12-15 illustrates the design.
 
 Online presence
@@ -4490,7 +4466,7 @@ channels, etc. for better load time [10].
 connections to a chat server. If a chat server goes offline, service discovery
 (Zookeeper) will provide a new chat server for clients to establish new connections
 with.
-- Message resent mechanism. Retry and queueing are common techniques for
+- Message resent mechanism. Retry and  #queueing are common techniques for
 resending messages.
 
 Congratulations on getting this far! Now give yourself a pat on the back. Good job!
@@ -5075,10 +5051,10 @@ video streams possible for different devices and bandwidth capabilities.
 - Transcoded storage: It is a blob storage that stores transcoded video files.
 -  #CDN: Videos are  #cached in  #CDN. When you click the play button, a video is streamed
 from the  #CDN.
-- Completion queue: It is a message queue that stores information about video transcoding
+- Completion  #queue: It is a message  #queue that stores information about video transcoding
 completion events.
 - Completion handler: This consists of a list of workers that pull event data from the
-completion queue and update metadata  #cache and database.
+completion  #queue and update metadata  #cache and database.
 
 Now that we understand each component individually, let us examine how the video
 uploading flow works. The flow is broken down into two processes running in parallel.
@@ -5093,10 +5069,10 @@ Figure 14-5 shows how to upload the actual video. The explanation is shown below
 2. Transcoding servers fetch videos from the original storage and start transcoding.
 3. Once transcoding is complete, the following two steps are executed in parallel:
 3a. Transcoded videos are sent to transcoded storage.
-3b. Transcoding completion events are queued in the completion queue.
+3b. Transcoding completion events are  #queued in the completion  #queue.
 3a.1. Transcoded videos are distributed to  #CDN.
 3b.1. Completion handler contains a bunch of workers that continuously pull event data
-from the queue.
+from the  #queue.
 3b.1.a. and 3b.1.b. Completion handler updates the metadata database and  #cache when
 video transcoding is complete.
 4. API servers inform the client that the video is successfully uploaded and is ready for
@@ -5223,7 +5199,7 @@ system could use persisted data for retry operations.
 
 DAG scheduler
 
-The DAG scheduler splits a DAG graph into stages of tasks and puts them in the task queue
+The DAG scheduler splits a DAG graph into stages of tasks and puts them in the task  #queue
 in the resource manager. Figure 14-15 shows an example of how the DAG scheduler works.
 
 As shown in Figure 14-15, the original video is split into three stages: Stage 1: video, audio,
@@ -5233,20 +5209,20 @@ thumbnail. The audio file requires audio encoding as part of the stage 2 tasks.
 Resource manager
 
 The resource manager is responsible for managing the efficiency of resource allocation. It
-contains 3 queues and a task scheduler as shown in Figure 14-17.
-- Task queue: It is a priority queue that contains tasks to be executed.
-- Worker queue: It is a priority queue that contains worker utilization info.
-- Running queue: It contains info about the currently running tasks and workers running
+contains 3  #queues and a task scheduler as shown in Figure 14-17.
+- Task  #queue: It is a priority  #queue that contains tasks to be executed.
+- Worker  #queue: It is a priority  #queue that contains worker utilization info.
+- Running  #queue: It contains info about the currently running tasks and workers running
 the tasks.
 - Task scheduler: It picks the optimal task/worker, and instructs the chosen task worker to
 execute the job.
 
 The resource manager works as follows:
-- The task scheduler gets the highest priority task from the task queue.
-- The task scheduler gets the optimal task worker to run the task from the worker queue.
+- The task scheduler gets the highest priority task from the task  #queue.
+- The task scheduler gets the optimal task worker to run the task from the worker  #queue.
 - The task scheduler instructs the chosen task worker to run the task.
-- The task scheduler binds the task/worker info and puts it in the running queue.
-- The task scheduler removes the job from the running queue once the job is done.
+- The task scheduler binds the task/worker info and puts it in the running  #queue.
+- The task scheduler removes the job from the running  #queue once the job is done.
 
 Task workers
 
@@ -5300,13 +5276,13 @@ of how a video is transferred from original storage to the  #CDN. The flow is sh
 14-25, revealing that the output depends on the input of the previous step. This dependency
 makes parallelism difficult.
 
-To make the system more loosely coupled, we introduced message queues as shown in Figure
-14-26. Let us use an example to explain how message queues make the system more loosely
+To make the system more loosely coupled, we introduced message  #queues as shown in Figure
+14-26. Let us use an example to explain how message  #queues make the system more loosely
 coupled.
-- Before the message queue is introduced, the encoding module must wait for the output of
+- Before the message  #queue is introduced, the encoding module must wait for the output of
 the download module.
-- After the message queue is introduced, the encoding module does not need to wait for the
-output of the download module anymore. If there are events in the message queue, the
+- After the message  #queue is introduced, the encoding module does not need to wait for the
+output of the download module anymore. If there are events in the message  #queue, the
 encoding module can execute those jobs in parallel.
 
 Safety optimization: pre-signed upload URL
@@ -5384,7 +5360,7 @@ entire video is passed to the server. The job of splitting videos is done on the
 - Transcoding error: retry.
 - Preprocessor error: regenerate DAG diagram.
 - DAG scheduler error: reschedule a task.
-- Resource manager queue down: use a replica.
+- Resource manager  #queue down: use a replica.
 - Task worker down: retry the task on a new worker.
 - API server down: API servers are  #stateless so requests will be directed to a different API
 server.
@@ -5686,8 +5662,8 @@ from notification service to clients as certain events happen. In our specific c
 service notifies relevant clients when a file is added/edited/removed elsewhere so they can
 pull the latest changes.
 
-Offline backup queue: If a client is offline and cannot pull the latest file changes, the offline
-backup queue stores the info so changes will be synced when the client is online.
+Offline backup  #queue: If a client is offline and cannot pull the latest file changes, the offline
+backup  #queue stores the info so changes will be synced when the client is online.
 
 We have discussed the design of Google Drive at the high-level. Some of the components are
 complicated and worth careful examination; we will discuss these in detail in the deep dive.
@@ -5890,8 +5866,8 @@ server goes down, all the long poll connections are lost so clients must reconne
 different server. Even though one server can keep many open connections, it cannot
 reconnect all the lost connections at once. Reconnecting with all the lost clients is a
 relatively slow process.
-- Offline backup queue failure: Queues are replicated multiple times. If one queue fails,
-consumers of the queue may need to re-subscribe to the backup queue.
+- Offline backup  #queue failure:  #Queues are replicated multiple times. If one  #queue fails,
+consumers of the  #queue may need to re-subscribe to the backup  #queue.
 
 Step 4 - Wrap up
 
