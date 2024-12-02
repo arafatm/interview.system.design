@@ -28,7 +28,7 @@ title: System Design Interview - An Insider’s Guide
   - Performance, Reliability, HA
 -  #Cache for temporary, (mostly) RO data
 -  #CDN for static assets
-- Stateless servers for autoscaling. Use persistent #nosql ( #redis) to store state
+-  #stateless/servers for autoscaling. Use persistent #nosql ( #redis) to store state
 - geoDNS for DC geo-routing
 - MQ for long-running tasks
 
@@ -346,7 +346,7 @@ Considerations of using a  #CDN
   transfers in and out of the  #CDN. Caching infrequently used assets provides no
   significant benefits so you should consider moving them out of the  #CDN.
 - Setting an appropriate __cache expiry__: For time-sensitive content, setting
-  a  #cache expiry time is important. The  #cache expiry time should neither be too
+  a  #cache/expiry time is important. The  #cache/expiry time should neither be too
   long nor too short. If it is too long, the content might no longer be fresh.
   If it is too short, it can cause repeat reloading of content from origin
   servers to the  #CDN.
@@ -368,19 +368,15 @@ Figure 1-11 shows the design after the  #CDN and  #cache are added.
    They are fetched from the  #CDN for better performance.
 2. The database load is lightened by caching data.
 
-### Stateless web tier
+###  #Stateless web tier
 
-Now it is time to consider _scaling the web tier horizontally_. For this, we need
-to __move state (for instance user session data) out of the web tier__. A good
-practice is to store session data in the persistent storage such as relational
-database or #NoSQL. Each web server in the cluster can access state data from
-databases. This is called stateless web tier.
+Now it is time to consider _scaling the web tier horizontally_. For this, we need to __move state (for instance user session data) out of the web tier__. A good practice is to store session data in the persistent storage such as  #RDBMS or #NoSQL. Each web server in the cluster can access state data from databases. This is called  #stateless/web tier.
 
-### Stateful architecture
+###  #Stateful architecture
 
-A stateful server and stateless server has some key differences. A stateful
-server remembers client data (state) from one request to the next. A __stateless
-server keeps no state information__.
+A  #stateful/server and  #stateless/server has some key differences. 
+- A  #stateful/server remembers client data (state) from one request to the next. 
+- A #stateless/server keeps no state information.
 
 ![stateful architecture](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.12.png)
 
@@ -394,70 +390,45 @@ requests from User C must be sent to Server 3.
 
 The _issue is that every request from the same client must be routed to the
 same server_. This can be done with sticky sessions in most #load_balancer
-[10]; however, this adds the overhead. _Adding or removing servers is much more
+[(10) Configure Sticky Sessions for Your Classic Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html)
+
+However, this adds the overhead. _Adding or removing servers is much more
 difficult_ with this approach. It is also _challenging to handle server
 failures_.
 
-### Stateless architecture
+### #Stateless architecture
 
-Figure 1-13 shows the stateless architecture.
+Figure 1-13 shows the  #stateless architecture.
 
 ![stateless architecture](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.13.png)
 
-In this stateless architecture, HTTP requests from users can be sent to any web
-servers, which fetch state data from a shared data store. State data is stored
-in a shared data store and kept out of web servers. A stateless system is
-simpler, more robust, and scalable.
+In this  #stateless architecture, HTTP requests from users can be sent to any web servers, which fetch state data from a shared data store. State data is stored in a shared data store and kept out of web servers. A  #stateless system is simpler, more robust, and scalable.
 
-Figure 1-14 shows the updated design with a stateless web tier.
+Figure 1-14 shows the updated design with a  #stateless web tier.
 
 ![stateless web tier](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.14.png)
 
-In Figure 1-14, we _move the session data out of the web tier and store them in
-the persistent data store_. The shared data store could be a relational
-database,  #Memcached, #Redis, #NoSQL, etc. The #NoSQL data store is chosen as it is
-easy to scale. Autoscaling means adding or removing web servers automatically
-based on the traffic load. After the state data is removed out of web servers,
-auto-scaling of the web tier is easily achieved by adding or removing servers
-based on traffic load.
+In Figure 1-14, we _move the session data out of the web tier and store them in the persistent data store_. The shared data store could be a relational database,  #Memcached, #Redis, #NoSQL, etc. The #NoSQL data store is chosen as it is easy to scale. Autoscaling means adding or removing web servers automatically based on the traffic load. After the state data is removed out of web servers, auto-scaling of the web tier is easily achieved by adding or removing servers based on traffic load.
 
-Your website grows rapidly and attracts a significant number of users
-internationally. To improve availability and provide a better user experience
-across wider geographical areas, supporting multiple data centers is crucial.
+Your website grows rapidly and attracts a significant number of users internationally. To improve availability and provide a better user experience across wider geographical areas, supporting multiple data centers is crucial.
 
 ### Data centers
 
-Figure 1-15 shows an example setup with two data centers. In normal operation,
-users are geoDNS-routed, also known as geo-routed, to the closest data center,
-with a split traffic of x% in US-East and (100 – x)% in US-West. __geoDNS__ is
-a #DNS service that allows domain names to be resolved to IP addresses based on
-the location of a user.
+Figure 1-15 shows an example setup with two data centers. In normal operation, users are geoDNS-routed, also known as geo-routed, to the closest data center, with a split traffic of x% in US-East and (100 – x)% in US-West. #geoDNS is a #DNS service that allows domain names to be resolved to IP addresses based on the location of a user.
 
 ![DC](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.15.png)
 
-In the event of any significant data center outage, we direct all traffic to a
-healthy data center.
+In the event of any significant data center outage, we direct all traffic to a healthy data center.
 
-In Figure 1-16, data center 2 (US-West) is offline, and 100% of the traffic is
-routed to data center 1 (US-East).
+In Figure 1-16, data center 2 (US-West) is offline, and 100% of the traffic is routed to data center 1 (US-East).
 
 ![DC offline](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.16.png)
 
-Several _technical challenges_ must be resolved to achieve multi-data center
-setup:
-- __Traffic redirection__: Effective tools are needed to direct traffic to the
-  correct data center. GeoDNS can be used to direct traffic to the nearest data
-  center depending on where a user is located.
-- __Data synchronization__: Users from different regions could use different
-  local databases or  #caches. In #failover cases, traffic might be routed to a
-  data center where data is unavailable. A common strategy is to replicate data
-  across multiple data centers. A previous study shows how Netflix implements
-  asynchronous multi-data center #replication [11].
-- __Test and deployment__: With multi-data center setup, it is important to
-  test your website/application at different locations. Automated deployment
-  tools are vital to keep services consistent through all the data centers
-  [11].
-
+Several _technical challenges_ must be resolved to achieve multi-data center setup:
+- __Traffic redirection__: Effective tools are needed to direct traffic to the correct data center. GeoDNS can be used to direct traffic to the nearest data center depending on where a user is located.
+- __Data synchronization__: Users from different regions could use different local databases or  #caches. In #failover cases, traffic might be routed to a data center where data is unavailable. A common strategy is to replicate data across multiple data centers. A previous study shows how Netflix implements asynchronous multi-data center #replication [(11) Active-Active for Multi-Regional Resiliency](https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b)
+- __Test and deployment__: With multi-data center setup, it is important to test your website/application at different locations. Automated deployment tools are vital to keep services consistent through all the data centers  [(11) Active-Active for Multi-Regional Resiliency](https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b)
+ 
 To further scale our system, we need to decouple different components of the
 system so they can be scaled independently. Messaging queue is a key strategy
 employed by many realworld distributed systems to solve this problem.
@@ -517,7 +488,7 @@ optimize your system and decouple the system to even smaller services. All the
 techniques learned in this chapter should provide a good foundation to tackle
 new challenges. To conclude this chapter, we provide a summary of how we scale
 our system to support millions of users:
-- Keep web tier stateless
+- Keep web tier  #stateless
 - Build #redundancy at every tier
 -  #Cache data as much as you can
 - Support multiple data centers
@@ -532,7 +503,7 @@ job!
 ### Reference materials
 
 - [1] Hypertext Transfer Protocol: https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol
-- [2] Should you go Beyond Relational Databases?: https://blog.teamtreehouse.com/should-you-go-beyond-relational-databases
+- [2] Should you go Beyond  #RDBMSs?: https://blog.teamtreehouse.com/should-you-go-beyond-relational-databases
 - [3] #Replication: https://en.wikipedia.org/wiki/Replication_(computing) 
 - [4] Multi-master #replication: https://en.wikipedia.org/wiki/Multi-master_replication
 - [5] NDB Cluster #Replication: Multi-Master and Circular #Replication: https://dev.mysql.com/doc/refman/5.7/en/mysql-cluster-replication-multi-master.html
@@ -1484,7 +1455,7 @@ enough to handle the traffic.
 _When multiple rate limiter servers are used, synchronization is required_. For
 example, on the left side of Figure 4-15, client 1 sends requests to rate
 limiter 1, and client 2 sends requests to rate limiter 2. As the web tier is
-stateless, clients can send requests to a different rate limiter as shown on
+ #stateless, clients can send requests to a different rate limiter as shown on
 the right side of Figure 4-15. If no synchronization happens, rate limiter 1
 does not contain any data about client 2. Thus, the rate limiter cannot work
 properly.
@@ -2715,7 +2686,7 @@ function, URL shortening and URL redirecting.
 In the high-level design, everything is stored in a hash table. This is a good
 starting point; however, this approach is not feasible for real-world systems
 as memory resources are limited and expensive. A better option is to store
-<shortURL, longURL> mapping in a relational database. Figure 8-4 shows a simple
+<shortURL, longURL> mapping in a  #RDBMS. Figure 8-4 shows a simple
 database table design. The simplified version of the table contains 3 columns:
 id, shortURL, longURL.
 
@@ -2858,7 +2829,7 @@ talking points.
   limiter helps to filter out requests based on IP address or other filtering
   rules. If you want to refresh your memory about rate limiting, refer to
   “Chapter 4: Design a rate limiter”.
-- _Web server scaling_: Since the web tier is stateless, it is easy to scale
+- _Web server scaling_: Since the web tier is  #stateless, it is easy to scale
   the web tier by adding or removing web servers.
 - _Database scaling_: Database #replication and sharding are common techniques.
 - _Analytics_: Data is increasingly important for business success. Integrating
@@ -3360,7 +3331,7 @@ still miss many relevant talking points:
   reliability.
 - _Horizontal scaling_: For large scale crawl, hundreds or even thousands of
   servers are needed to perform download tasks. The key is to keep servers
-  stateless.
+   #stateless.
 - _Availability, consistency, and reliability_: These concepts are at the core of
   any large system’s success. We discussed these concepts in detail in Chapter 1. 
   Refresh your memory on these topics.
@@ -4052,7 +4023,7 @@ listed below.
 - Database sharding
 
 #### Other talking points:
-- Keep web tier stateless
+- Keep web tier  #stateless
 -  #Cache data as much as you can
 - Support multiple data centers
 - Lose couple components with message queues
@@ -4183,7 +4154,7 @@ available or a timeout threshold has been reached. Once the client receives new 
 immediately sends another request to the server, restarting the process. Long polling has a
 few drawbacks:
 - Sender and receiver may not connect to the same chat server. HTTP based servers are
-usually stateless. If you use round robin for load balancing, the server that receives the
+usually  #stateless. If you use round robin for load balancing, the server that receives the
 message might not have a long-polling connection with the client who receives the
 message.
 - A server has no good way to tell if a client is disconnected.
@@ -4220,23 +4191,23 @@ profile, etc) of a chat application could use the traditional request/response m
 HTTP. Let us drill in a bit and look at the high-level components of the system.
 
 As shown in Figure 12-7, the chat system is broken down into three major categories:
-stateless services, stateful services, and third-party integration.
+ #stateless services,  #stateful services, and third-party integration.
 
-Stateless Services
+ #Stateless Services
 
-Stateless services are traditional public-facing request/response services, used to manage the
+ #Stateless services are traditional public-facing request/response services, used to manage the
 login, signup, user profile, etc. These are common features among many websites and apps.
 
-Stateless services sit behind a #load_balancer whose job is to route requests to the correct
+ #Stateless services sit behind a #load_balancer whose job is to route requests to the correct
 services based on the request paths. These services can be monolithic or individual
-microservices. We do not need to build many of these stateless services by ourselves as there
+microservices. We do not need to build many of these  #stateless services by ourselves as there
 are services in the market that can be integrated easily. The one service that we will discuss
 more in deep dive is the service discovery. Its primary job is to give the client a list of #DNS
 host names of chat servers that the client could connect to.
 
-Stateful Service
+ #Stateful Service
 
-The only stateful service is the chat service. The service is stateful because each client
+The only  #stateful service is the chat service. The service is  #stateful because each client
 maintains a persistent network connection to a chat server. In this service, a client normally
 does not switch to another chat server as long as the server is still available. The service
 discovery coordinates closely with the chat service to avoid server overloading. We will go
@@ -4281,11 +4252,11 @@ Storage
 At this point, we have servers ready, services up running and third-party integrations
 complete. Deep down the technical stack is the data layer. Data layer usually requires some
 effort to get it correct. An important decision we must make is to decide on the right type of
-database to use: relational databases or #NoSQL databases? To make an informed decision, we
+database to use:  #RDBMSs or #NoSQL databases? To make an informed decision, we
 will examine the data types and read/write patterns.
 
 Two types of data exist in a typical chat system. The first is generic data, such as user profile,
-setting, user friends list. These data are stored in robust and reliable relational databases.
+setting, user friends list. These data are stored in robust and reliable  #RDBMSs.
 
 #Replication and sharding are common techniques to satisfy availability and scalability
 requirements.
@@ -4305,7 +4276,7 @@ Selecting the correct storage system that supports all of our use cases is cruci
 recommend key-value stores for the following reasons:
 - Key-value stores allow easy horizontal scaling.
 - Key-value stores provide very low latency to access data.
-- Relational databases do not handle long tail [3] of data well. When the indexes grow
+-  #RDBMSs do not handle long tail [3] of data well. When the indexes grow
 large, random access is expensive.
 - Key-value stores are adopted by other proven reliable chat applications. For example,
 both Facebook messenger and Discord use key-value stores. Facebook messenger uses
@@ -4661,8 +4632,8 @@ deep into a few components and explore optimizations as follows:
 
 Trie data structure
 
-Relational databases are used for storage in the high-level design. However, fetching the top
-5 search queries from a relational database is inefficient. The data structure trie (prefix tree) is
+ #RDBMSs are used for storage in the high-level design. However, fetching the top
+5 search queries from a  #RDBMS is inefficient. The data structure trie (prefix tree) is
 used to overcome the problem. As trie data structure is crucial for the system, we will
 dedicate significant time to design a customized trie. Please note that some of the ideas are
 from articles [2] and [3].
@@ -5415,7 +5386,7 @@ entire video is passed to the server. The job of splitting videos is done on the
 - DAG scheduler error: reschedule a task.
 - Resource manager queue down: use a replica.
 - Task worker down: retry the task on a new worker.
-- API server down: API servers are stateless so requests will be directed to a different API
+- API server down: API servers are  #stateless so requests will be directed to a different API
 server.
 - Metadata  #cache server down: data is replicated multiple times. If one node goes down,
 you can still access other nodes to fetch data. We can bring up a new  #cache server to
@@ -5431,7 +5402,7 @@ Step 4 - Wrap up
 In this chapter, we presented the architecture design for video streaming services like
 
 YouTube. If there is extra time at the end of the interview, here are a few additional points:
-- Scale the API tier: Because API servers are stateless, it is easy to scale API tier
+- Scale the API tier: Because API servers are  #stateless, it is easy to scale API tier
 horizontally.
 - Scale the database: You can talk about database #replication and sharding.
 - Live streaming: It refers to the process of how a video is recorded and broadcasted in real
@@ -5768,10 +5739,10 @@ following:
 - Data in  #cache replicas and the master is consistent.
 - Invalidate  #caches on database write to ensure  #cache and database hold the same value.
 
-Achieving strong consistency in a relational database is easy because it maintains the #ACID
+Achieving strong consistency in a  #RDBMS is easy because it maintains the #ACID
 (Atomicity, Consistency, Isolation, Durability) properties [9]. However, #NoSQL databases do
 not support #ACID properties by default. #ACID properties must be programmatically
-incorporated in synchronization logic. In our design, we choose relational databases because
+incorporated in synchronization logic. In our design, we choose  #RDBMSs because
 the #ACID is natively supported.
 
 Metadata database
@@ -5902,7 +5873,7 @@ a heartbeat for some time.
 jobs.
 - Cloud storage failure: S3 buckets are replicated multiple times in different regions. If
 files are not available in one region, they can be fetched from different regions.
-- API server failure: It is a stateless service. If an API server fails, the traffic is redirected
+- API server failure: It is a  #stateless service. If an API server fails, the traffic is redirected
 to other API servers by a #load_balancer.
 - Metadata  #cache failure: Metadata  #cache servers are replicated multiple times. If one node
 goes down, you can still access other nodes to fetch data. We will bring up a new  #cache
