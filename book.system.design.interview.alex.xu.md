@@ -1,13 +1,10 @@
 ---
-permalink: /interview/system-design
 author: Alex Xu
 title: System Design Interview - An Insider’s Guide 
 ---
 
-```
-:execute getline(".")
-inoremap png ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/11.01.png)<ESC>5<left>r
-```
+// permalink: /interview/system-design
+
 
 [System Design Interview PDF](system.design.interview.pdf)
 
