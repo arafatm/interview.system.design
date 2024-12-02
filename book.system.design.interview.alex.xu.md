@@ -1,6 +1,7 @@
 ---
+source: https://www.amazon.com/System-Design-Interview-Insiders-Guide-ebook/dp/B08B3FWYBX
 author: Alex Xu
-title: System Design Interview - An Insider’s Guide 
+title: System Design Interview - An Insider’s Guide
 ---
 
 // permalink: /interview/system-design
@@ -21,13 +22,13 @@ title: System Design Interview - An Insider’s Guide
 ## Summary
 
 ### 1 Scale
-- 5 DB types: RDMBS vs NoSQL (KV, Graph, Column, Document)
-- Load Balancer
+- 5 DB types: RDMBS vs #NoSQL (KV, Graph, Column, Document)
+- #load_balancer
 - shard DB: main (write) vs replica(s) (read)
   - Performance, Reliability, HA
 - Cache for temporary, (mostly) RO data
 - CDN for static assets
-- Stateless servers for autoscaling. Use persistent nosql (redis) to store state
+- Stateless servers for autoscaling. Use persistent #nosql (redis) to store state
 - geoDNS for DC geo-routing
 - MQ for long-running tasks
 
@@ -36,7 +37,7 @@ title: System Design Interview - An Insider’s Guide
 - Commonly back-of-the-envelope: QPS, peak QPS, storage, cache, number of servers
 
 ### 3 Interview
-- __communicate with interviewer__
+__communicate with interviewer__
 1. Understand problem and establish design scope 
 2. Step 2 - Propose High-Level Design And Get Buy-In
 3. Design Deep Dive
@@ -45,14 +46,13 @@ title: System Design Interview - An Insider’s Guide
 ## CHAPTER 1: SCALE FROM ZERO TO MILLIONS OF USERS
 
 ### Single server setup
-
 ![single server setup](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.02.png)
 
 To understand this setup, it is helpful to investigate the _request flow_ and _traffic source_. 
 
 ### request flow 
 1. Users access websites through domain names, such as api.mysite.com. Usually,
-   the Domain Name System (DNS) is a paid service provided by 3rd parties and
+   the Domain Name System ( #DNS ) is a paid service provided by 3rd parties and
    not hosted by our servers.
 2. Internet Protocol (IP) address is returned to the browser or mobile app. In
    the example, IP address 15.125.23.214 is returned.
@@ -88,16 +88,15 @@ Split Web/DB to allow independent scaling
 ![db](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.03.png)
 
 ### Which databases to use?
-
-- __RDMBS__  MySQL, Oracle database, PostgreSQL, etc.
-- __NoSQL__ CouchDB, Neo4j, Cassandra, HBase, Amazon DynamoDB, etc. 
+- #RDBMS MySQL, Oracle database, PostgreSQL, etc.
+- #NoSQL CouchDB, Neo4j, Cassandra, HBase, Amazon DynamoDB, etc. 
   - Grouped into four categories: 
     1. key-value stores, 
     2. graph stores, 
     2. column stores, and 
     2. document stores. 
 
-Generally RDBMS are the best option. However, might not suitable for your
+Generally #RDBMS are the best option. However, might not suitable for your
 specific use cases, e.g. 
 - Your application requires _super-low latency_.
 - Your data are _unstructured_, or you do not have any relational data.
@@ -116,7 +115,7 @@ When traffic is low, vertical scaling is a great option, and the simplicity of v
 its main advantage. Unfortunately, it comes with serious limitations.
 - _Vertical scaling has a hard limit_. It is impossible to add unlimited CPU and
   memory to a single server.
-- Vertical scaling _does not have failover and redundancy_. If one server goes
+- Vertical scaling _does not have #failover and #redundancy_. If one server goes
   down, the website/app goes down with it completely.
 
 > Horizontal scaling is more desirable for large scale applications due to the
@@ -125,44 +124,44 @@ its main advantage. Unfortunately, it comes with serious limitations.
 In the previous design, users are connected to the web server directly. Users will unable to
 access the website if the web server is offline. In another scenario, if many users access the
 web server simultaneously and it reaches the web server’s load limit, users generally
-experience slower response or fail to connect to the server. A load balancer is the best
+experience slower response or fail to connect to the server. A #load_balancer is the best
 technique to address these problems.
 
-### Load balancer
+### #load_balancer
 
-A load balancer evenly _distributes incoming traffic_ among web servers that
+A #load_balancer evenly _distributes incoming traffic_ among web servers that
 are defined in a load-balanced set. 
 
 ![load balancer](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.04.png)
 
-As shown in Figure 1-4, users connect to the public IP of the load balancer
+As shown in Figure 1-4, users connect to the public IP of the #load_balancer
 directly. With this setup, _web servers are unreachable directly by clients_
 anymore. 
 
 For better security, private IPs are used for communication between servers. A
 private IP is an IP address reachable only between servers in the same network;
-however, it is unreachable over the internet. The load balancer _communicates
+however, it is unreachable over the internet. The #load_balancer _communicates
 with web servers through private IPs_.
 
-In Figure 1-4, after a load balancer and a second web server are added, we
-successfully solved no failover issue and improved the availability of the web
+In Figure 1-4, after a #load_balancer and a second web server are added, we
+successfully solved no #failover issue and improved the availability of the web
 tier. Details are explained below:
 - If server 1 goes offline, all the traffic will be routed to server 2. This
   prevents the website from going offline. We will also add a new healthy web
   server to the server pool to balance the load.
 - If the website traffic grows rapidly, and two servers are not enough to
-  handle the traffic, the load balancer can handle this problem gracefully. You
-  only need to add more servers to the web server pool, and the load balancer
+  handle the traffic, the #load_balancer can handle this problem gracefully. You
+  only need to add more servers to the web server pool, and the #load_balancer
   automatically starts to send requests to them.
 
 Now the web tier looks good, what about the data tier? The current design has
-one database, so it does not support failover and redundancy. Database
-replication is a common technique to address those problems. Let us take a
+one database, so it does not support #failover and #redundancy. Database
+#replication is a common technique to address those problems. Let us take a
 look.
 
-### Database replication
+### Database #replication
 
-Quoted from Wikipedia: “Database replication can be used in many database
+Quoted from Wikipedia: “Database #replication can be used in many database
 management systems, usually with a master/slave relationship between the
 original (master) and the copies (slaves)” [3].
 
@@ -178,7 +177,8 @@ multiple slave databases.
 
 ![master slave](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.05.png)
 
-_Advantages_ of database replication:
+> main for write, 
+_Advantages_ of database #replication:
 - Better _performance_: In the master-slave model, all writes and updates
   happen in master nodes; whereas, read operations are distributed across slave
   nodes. This model improves performance because it allows more queries to be
@@ -191,7 +191,7 @@ _Advantages_ of database replication:
   website remains in operation even if a database is offline as you can access
   data stored in another database server.
 
-In the previous section, we discussed how a load balancer helped to _improve
+In the previous section, we discussed how a #load_balancer helped to _improve
 system availability_. We ask the same question here: what if one of the
 databases goes offline? The architectural design discussed in Figure 1-5 can
 handle this case:
@@ -203,22 +203,22 @@ handle this case:
 - If the _master database goes offline, a slave database will be promoted to be
   the new master_. All the database operations will be temporarily executed on
   the new master database. A new slave database will replace the old one for
-  data replication immediately.
+  data #replication immediately.
 
 In production systems, promoting a new master is more complicated as the __data in a slave
 database might not be up to date__. The missing data needs to be updated by running data
-recovery scripts. Although some other replication methods like multi-masters and circular
-replication could help, those setups are more complicated; and their discussions are
+recovery scripts. Although some other #replication methods like multi-masters and circular
+#replication could help, those setups are more complicated; and their discussions are
 beyond the scope of this book. Interested readers should refer to the listed reference
 materials [4][5].
 
-Figure 1-6 shows the system design after adding the load balancer and database replication.
+Figure 1-6 shows the system design after adding the #load_balancer and database #replication.
 
-![1-6 db replication](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.06.png)
+![1-6 db #replication](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.06.png)
 
 Let us take a look at the design:
-- A user gets the IP address of the load balancer from DNS.
-- A user connects the load balancer with this IP address.
+- A user gets the IP address of the #load_balancer from #DNS.
+- A user connects the #load_balancer with this IP address.
 - The HTTP request is routed to either Server 1 or Server 2.
 - A web server reads user data from a slave database.
 - A web server routes any data-modifying operations to the master database.
@@ -373,7 +373,7 @@ Figure 1-11 shows the design after the CDN and cache are added.
 Now it is time to consider _scaling the web tier horizontally_. For this, we need
 to __move state (for instance user session data) out of the web tier__. A good
 practice is to store session data in the persistent storage such as relational
-database or NoSQL. Each web server in the cluster can access state data from
+database or #NoSQL. Each web server in the cluster can access state data from
 databases. This is called stateless web tier.
 
 ### Stateful architecture
@@ -393,7 +393,7 @@ Similarly, all HTTP requests from User B must be routed to Server 2; all
 requests from User C must be sent to Server 3.
 
 The _issue is that every request from the same client must be routed to the
-same server_. This can be done with sticky sessions in most load balancers
+same server_. This can be done with sticky sessions in most #load_balancer
 [10]; however, this adds the overhead. _Adding or removing servers is much more
 difficult_ with this approach. It is also _challenging to handle server
 failures_.
@@ -415,7 +415,7 @@ Figure 1-14 shows the updated design with a stateless web tier.
 
 In Figure 1-14, we _move the session data out of the web tier and store them in
 the persistent data store_. The shared data store could be a relational
-database, Memcached/Redis, NoSQL, etc. The NoSQL data store is chosen as it is
+database, Memcached/Redis, #NoSQL, etc. The #NoSQL data store is chosen as it is
 easy to scale. Autoscaling means adding or removing web servers automatically
 based on the traffic load. After the state data is removed out of web servers,
 auto-scaling of the web tier is easily achieved by adding or removing servers
@@ -430,7 +430,7 @@ across wider geographical areas, supporting multiple data centers is crucial.
 Figure 1-15 shows an example setup with two data centers. In normal operation,
 users are geoDNS-routed, also known as geo-routed, to the closest data center,
 with a split traffic of x% in US-East and (100 – x)% in US-West. __geoDNS__ is
-a DNS service that allows domain names to be resolved to IP addresses based on
+a #DNS service that allows domain names to be resolved to IP addresses based on
 the location of a user.
 
 ![DC](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.15.png)
@@ -449,10 +449,10 @@ setup:
   correct data center. GeoDNS can be used to direct traffic to the nearest data
   center depending on where a user is located.
 - __Data synchronization__: Users from different regions could use different
-  local databases or caches. In failover cases, traffic might be routed to a
+  local databases or caches. In #failover cases, traffic might be routed to a
   data center where data is unavailable. A common strategy is to replicate data
   across multiple data centers. A previous study shows how Netflix implements
-  asynchronous multi-data center replication [11].
+  asynchronous multi-data center #replication [11].
 - __Test and deployment__: With multi-data center setup, it is important to
   test your website/application at different locations. Automated deployment
   tools are vital to keep services consistent through all the data centers
@@ -518,7 +518,7 @@ techniques learned in this chapter should provide a good foundation to tackle
 new challenges. To conclude this chapter, we provide a summary of how we scale
 our system to support millions of users:
 - Keep web tier stateless
-- Build redundancy at every tier
+- Build #redundancy at every tier
 - Cache data as much as you can
 - Support multiple data centers
 - Host static assets in CDN
@@ -533,18 +533,18 @@ job!
 
 - [1] Hypertext Transfer Protocol: https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol
 - [2] Should you go Beyond Relational Databases?: https://blog.teamtreehouse.com/should-you-go-beyond-relational-databases
-- [3] Replication: https://en.wikipedia.org/wiki/Replication_(computing) 
-- [4] Multi-master replication: https://en.wikipedia.org/wiki/Multi-master_replication
-- [5] NDB Cluster Replication: Multi-Master and Circular Replication: https://dev.mysql.com/doc/refman/5.7/en/mysql-cluster-replication-multi-master.html
+- [3] #Replication: https://en.wikipedia.org/wiki/Replication_(computing) 
+- [4] Multi-master #replication: https://en.wikipedia.org/wiki/Multi-master_replication
+- [5] NDB Cluster #Replication: Multi-Master and Circular #Replication: https://dev.mysql.com/doc/refman/5.7/en/mysql-cluster-replication-multi-master.html
 - [6] Caching Strategies and How to Choose the Right One: https://codeahoy.com/2017/08/11/caching-strategies-and-how-to-choose-the-right-one/
 - [7] R. Nishtala, "Facebook, Scaling Memcache at," 10th USENIX Symposium on Networked Systems Design and Implementation (NSDI ’13).
 - [8] Single point of failure: https://en.wikipedia.org/wiki/Single_point_of_failure
 - [9] Amazon CloudFront Dynamic Content Delivery: https://aws.amazon.com/cloudfront/dynamic-content/
-- [10] Configure Sticky Sessions for Your Classic Load Balancer: https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html
+- [10] Configure Sticky Sessions for Your Classic #load_balancer: https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html
 - [11] Active-Active for Multi-Regional Resiliency: https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b
 - [12] Amazon EC2 High Memory Instances: https://aws.amazon.com/ec2/instance-types/high-memory/
 - [13] What it takes to run Stack Overflow: http://nickcraver.com/blog/2013/11/22/what-it-takes-to-run-stack-overflow
-- [14] What The Heck Are You Actually Using NoSQL For: http://highscalability.com/blog/2010/12/6/what-the-heck-are-you-actually-using-nosqlfor.html
+- [14] What The Heck Are You Actually Using #NoSQL For: http://highscalability.com/blog/2010/12/6/what-the-heck-are-you-actually-using-nosqlfor.html
 
 ## CHAPTER 2: BACK-OF-THE-ENVELOPE ESTIMATION
 
@@ -1801,7 +1801,7 @@ ones:
 - Data partitioning across the cluster in Apache Cassandra [4]
 - Discord chat application [5]
 - Akamai content delivery network [6]
-- Maglev network load balancer [7]
+- Maglev network #load_balancer [7]
 
 Congratulations on getting this far! Now give yourself a pat on the back. Good
 job!
@@ -1813,7 +1813,7 @@ Reference materials
 - [4] Cassandra - A Decentralized Structured Storage System: http://www.cs.cornell.edu/Projects/ladis2009/papers/Lakshman-ladis2009.PDF
 - [5] How Discord Scaled Elixir to 5,000,000 Concurrent Users: https://blog.discord.com/scaling-elixir-f9b8e1e7c29b
 - [6] CS168: The Modern Algorithmic Toolbox Lecture #1: Introduction and Consistent Hashing: http://theory.stanford.edu/~tim/s16/l/l1.pdf
-- [7] Maglev: A Fast and Reliable Software Network Load Balancer: https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/44824.pdf
+- [7] Maglev: A Fast and Reliable Software Network #load_balancer: https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/44824.pdf
 
 ## CHAPTER 6: DESIGN A KEY-VALUE STORE
 
@@ -1957,7 +1957,7 @@ interviewer and design the system accordingly.
 In this section, we will discuss the following core components and techniques
 used to build a key-value store:
 - Data partition
-- Data replication
+- Data #replication
 - Consistency
 - Inconsistency resolution
 - Handling failures
@@ -1994,7 +1994,7 @@ Using consistent hashing to partition data has the following advantages:
   the server capacity. For example, servers with higher capacity are assigned
   with more virtual nodes.
 
-### Data replication
+### Data #replication
 
 To achieve high availability and reliability, data must be replicated
 asynchronously over N servers, where N is a configurable parameter. These N
@@ -2084,7 +2084,7 @@ The next section explains how reconciliation works with versioning.
 
 ### Inconsistency resolution: versioning
 
-Replication gives high availability but causes inconsistencies among replicas.
+#Replication gives high availability but causes inconsistencies among replicas.
 Versioning and vector locks are used to solve inconsistency problems.
 Versioning means treating each data modification as a new immutable version of
 data. Before we talk about versioning, let us use an example to explain how
@@ -2359,7 +2359,7 @@ store.
 | Goals/Problems              | Technique                                                  |
 | --                          | --                                                         |
 | Ability to store big data   | Use _consistent hashing_ to spread the load across servers |
-| High Availability reads     | _Data replication_ & multi-data center setup               |
+| High Availability reads     | _Data #replication_ & multi-data center setup               |
 | High Availability write     | Versioning and conflict resolution with _vector locks_     |
 | Dataset partition           | _consistent hashing_                                       |
 | Incremental scalability     | _consistent hashing_                                       |
@@ -2367,7 +2367,7 @@ store.
 | Tunable consistency         | _quorum consensus_                                         |
 | Handling temporary failures | _sloppy quorum_ & _hinted handoff_                         |
 | Handling permanent failures | _merkle tree_                                              |
-| Handling DC outage          | _X-DC replication_                                         |
+| Handling DC outage          | _X-DC #replication_                                         |
 
 ### Reference materials
 - [1] Amazon DynamoDB: https://aws.amazon.com/dynamodb/
@@ -2425,16 +2425,16 @@ interview question, the requirements are listed as follows:
 
 Multiple options can be used to generate unique IDs in distributed systems. The
 options we considered are:
-- Multi-master replication
+- Multi-master #replication
 - Universally unique identifier (UUID)
 - Ticket server
 - Twitter snowflake approach
 
 Let us look at each of them, how they work, and the pros/cons of each option.
 
-### Multi-master replication
+### Multi-master #replication
 
-As shown in Figure 7-2, the first approach is multi-master replication.
+As shown in Figure 7-2, the first approach is multi-master #replication.
 
 This approach uses the _databases’ auto_increment feature_. Instead of increasing
 the next ID by 1, we increase it by k, where k is the number of database
@@ -2556,7 +2556,7 @@ millisecond_.
 ### Step 4 - Wrap up
 
 In this chapter, we discussed different approaches to design a unique ID
-generator: multimaster replication, UUID, ticket server, and Twitter
+generator: multimaster #replication, UUID, ticket server, and Twitter
 snowflake-like unique ID generator. We settle on snowflake as it supports all
 our use cases and is scalable in a distributed environment.
 
@@ -2840,7 +2840,7 @@ performance.
 
 The flow of URL redirecting is summarized as follows:
 1. A user clicks a short URL link: https://tinyurl.com/zn9edcu
-2. The load balancer forwards the request to web servers.
+2. The #load_balancer forwards the request to web servers.
 3. If a shortURL is already in the cache, return the longURL directly.
 4. If a shortURL is not in the cache, fetch the longURL from the database. If
    it is not in the database, it is likely a user entered an invalid shortURL.
@@ -2860,7 +2860,7 @@ talking points.
   “Chapter 4: Design a rate limiter”.
 - _Web server scaling_: Since the web tier is stateless, it is easy to scale
   the web tier by adding or removing web servers.
-- _Database scaling_: Database replication and sharding are common techniques.
+- _Database scaling_: Database #replication and sharding are common techniques.
 - _Analytics_: Data is increasingly important for business success. Integrating
   an analytics solution to the URL shortener could help to answer important
   questions like how many people click on a link? When do they click the link?
@@ -3010,10 +3010,10 @@ information about the URL Frontier, refer to the deep dive.
 The HTML downloader downloads web pages from the internet. Those URLs are
 provided by the URL Frontier.
 
-### DNS Resolver
+### #DNS Resolver
 
 To download a web page, a URL must be translated into an IP address. The HTML
-Downloader calls the DNS Resolver to get the corresponding IP address for the
+Downloader calls the #DNS Resolver to get the corresponding IP address for the
 URL. For instance, URL www.wikipedia.org is converted to IP address
 198.35.26.96 as of 3/5/2019.
 
@@ -3028,7 +3028,7 @@ process. Thus, the content parser is a separate component.
 
 Online research [6] reveals that 29% of the web pages are duplicated contents,
 which may cause the same content to be stored multiple times. We introduce the
-“Content Seen?” data structure to eliminate data redundancy and shorten
+“Content Seen?” data structure to eliminate data #redundancy and shorten
 processing time. It helps to detect new content previously stored in the
 system. To compare two HTML documents, we can compare them character by
 character. However, this method is slow and time-consuming, especially when
@@ -3081,7 +3081,7 @@ design diagram as shown in Figure 9-4.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/09.04.png)
 - Step 1: Add seed URLs to the URL Frontier
 - Step 2: HTML Downloader fetches a list of URLs from URL Frontier.
-- Step 3: HTML Downloader gets IP addresses of URLs from DNS resolver and
+- Step 3: HTML Downloader gets IP addresses of URLs from #DNS resolver and
   starts downloading.
 - Step 4: Content Parser parses HTML pages and checks if pages are malformed.
 - Step 5: After content is parsed and validated, it is passed to the “Content
@@ -3261,14 +3261,14 @@ smaller pieces; so, each downloader is responsible for a subset of the URLs.
 Figure 9-9 shows an example of a distributed crawl.
 ![](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/09.09.png)
 
-#### 2. Cache DNS Resolver
+#### 2. Cache #DNS Resolver
 
-DNS Resolver is a bottleneck for crawlers because DNS requests might take time
-due to the synchronous nature of many DNS interfaces. DNS response time ranges
-from 10ms to 200ms. Once a request to DNS is carried out by a crawler thread,
+#DNS Resolver is a bottleneck for crawlers because #DNS requests might take time
+due to the synchronous nature of many #DNS interfaces. #DNS response time ranges
+from 10ms to 200ms. Once a request to #DNS is carried out by a crawler thread,
 other threads are blocked until the first request is completed. Maintaining our
-DNS cache to avoid calling DNS frequently is an effective technique for speed
-optimization. Our DNS cache keeps the domain name to IP address mapping and is
+#DNS cache to avoid calling #DNS frequently is an effective technique for speed
+optimization. Our #DNS cache keeps the domain name to IP address mapping and is
 updated periodically by cron jobs.
 
 #### 3. Locality
@@ -3355,7 +3355,7 @@ still miss many relevant talking points:
 - _Filter out unwanted pages_: With finite storage capacity and crawl resources,
   an anti-spam component is beneficial in filtering out low quality and spam
   pages [13] [14].
-- _Database replication and sharding_: Techniques like replication and sharding
+- _Database #replication and sharding_: Techniques like #replication and sharding
   are used to improve the data layer availability, scalability, and
   reliability.
 - _Horizontal scaling_: For large scale crawl, hundreds or even thousands of
@@ -3893,7 +3893,7 @@ high-level design:
 
 - User: a user sends a request to retrieve her news feed. The request looks
   like this: `/v1/me/feed`.
-- Load balancer: load balancer redirects traffic to web servers.
+- #load_balancer: #load_balancer redirects traffic to web servers.
 - Web servers: web servers route requests to newsfeed service.
 - Newsfeed _service_: news feed service fetches news feed from the cache.
 - Newsfeed _cache_: store news feed IDs needed to render the news feed.
@@ -4045,8 +4045,8 @@ listed below.
 
 #### Scaling the database:
 - Vertical scaling vs Horizontal scaling
-- SQL vs NoSQL
-- Master-slave replication
+- SQL vs #NoSQL
+- Master-slave #replication
 - Read replicas
 - Consistency models
 - Database sharding
@@ -4227,11 +4227,11 @@ Stateless Services
 Stateless services are traditional public-facing request/response services, used to manage the
 login, signup, user profile, etc. These are common features among many websites and apps.
 
-Stateless services sit behind a load balancer whose job is to route requests to the correct
+Stateless services sit behind a #load_balancer whose job is to route requests to the correct
 services based on the request paths. These services can be monolithic or individual
 microservices. We do not need to build many of these stateless services by ourselves as there
 are services in the market that can be integrated easily. The one service that we will discuss
-more in deep dive is the service discovery. Its primary job is to give the client a list of DNS
+more in deep dive is the service discovery. Its primary job is to give the client a list of #DNS
 host names of chat servers that the client could connect to.
 
 Stateful Service
@@ -4281,13 +4281,13 @@ Storage
 At this point, we have servers ready, services up running and third-party integrations
 complete. Deep down the technical stack is the data layer. Data layer usually requires some
 effort to get it correct. An important decision we must make is to decide on the right type of
-database to use: relational databases or NoSQL databases? To make an informed decision, we
+database to use: relational databases or #NoSQL databases? To make an informed decision, we
 will examine the data types and read/write patterns.
 
 Two types of data exist in a typical chat system. The first is generic data, such as user profile,
 setting, user friends list. These data are stored in robust and reliable relational databases.
 
-Replication and sharding are common techniques to satisfy availability and scalability
+#Replication and sharding are common techniques to satisfy availability and scalability
 requirements.
 
 The second is unique to chat systems: chat history data. It is important to understand the
@@ -4338,7 +4338,7 @@ message_id must satisfy the following two requirements:
 - IDs should be sortable by time, meaning new rows have higher IDs than old ones.
 
 How can we achieve those two guarantees? The first idea that comes to mind is the
-“auto_increment” keyword in MySql. However, NoSQL databases usually do not provide
+“auto_increment” keyword in MySql. However, #NoSQL databases usually do not provide
 such a feature.
 
 The second approach is to use a global 64-bit sequence number generator like Snowflake [6].
@@ -4365,7 +4365,7 @@ and picks the best chat server for a client based on predefined criteria.
 
 Figure 12-11 shows how service discovery (Zookeeper) works.
 1. User A tries to log in to the app.
-2. The load balancer sends the login request to API servers.
+2. The #load_balancer sends the login request to API servers.
 3. After the backend authenticates the user, service discovery finds the best chat server for
 
 User A. In this example, server 2 is chosen and the server info is returned back to User A.
@@ -4820,8 +4820,8 @@ Query service
 In the high-level design, query service calls the database directly to fetch the top 5 results.
 
 Figure 13-11 shows the improved design as previous design is inefficient.
-1. A search query is sent to the load balancer.
-2. The load balancer routes the request to API servers.
+1. A search query is sent to the #load_balancer.
+2. The #load_balancer routes the request to API servers.
 3. API servers get trie data from Trie Cache and construct autocomplete suggestions for
 the client.
 4. In case the data is not in Trie Cache, we replenish data back to the cache. This way, all
@@ -5089,7 +5089,7 @@ It consists of the following components:
 - User: A user watches YouTube on devices such as a computer, mobile phone, or smart
 
 TV.
-- Load balancer: A load balancer evenly distributes requests among API servers.
+- #load_balancer: A #load_balancer evenly distributes requests among API servers.
 - API servers: All user requests go through API servers except video streaming.
 - Metadata DB: Video metadata are stored in Metadata DB. It is sharded and replicated to
 meet performance and high availability requirements.
@@ -5433,7 +5433,7 @@ In this chapter, we presented the architecture design for video streaming servic
 YouTube. If there is extra time at the end of the interview, here are a few additional points:
 - Scale the API tier: Because API servers are stateless, it is easy to scale API tier
 horizontally.
-- Scale the database: You can talk about database replication and sharding.
+- Scale the database: You can talk about database #replication and sharding.
 - Live streaming: It refers to the process of how a video is recorded and broadcasted in real
 time. Although our system is not designed specifically for live streaming, live streaming
 and non-live streaming have some similarities: both require uploading, encoding, and
@@ -5638,7 +5638,7 @@ industry-leading scalability, data availability, security, and performance” [3
 do some research to see if it is a good fit.
 
 After a lot of reading, you gain a good understanding of the S3 storage system and decide to
-store files in S3. Amazon S3 supports same-region and cross-region replication. A region is a
+store files in S3. Amazon S3 supports same-region and cross-region #replication. A region is a
 geographic area where Amazon web services (AWS) have data centers. As shown in Figure
 15-6, data can be replicated on the same-region (left side) and cross-region (right side).
 
@@ -5648,13 +5648,13 @@ availability. A bucket is like a folder in file systems.
 After putting files in S3, you can finally have a good night's sleep without worrying about
 data losses. To stop similar problems from happening in the future, you decide to do further
 research on areas you can improve. Here are a few areas you find:
-- Load balancer: Add a load balancer to distribute network traffic. A load balancer ensures
+- #load_balancer: Add a #load_balancer to distribute network traffic. A #load_balancer ensures
 evenly distributed traffic, and if a web server goes down, it will redistribute the traffic.
-- Web servers: After a load balancer is added, more web servers can be added/removed
+- Web servers: After a #load_balancer is added, more web servers can be added/removed
 easily, depending on the traffic load.
 - Metadata database: Move the database out of the server to avoid single point of failure.
 
-In the meantime, set up data replication and sharding to meet the availability and
+In the meantime, set up data #replication and sharding to meet the availability and
 scalability requirements.
 - File storage: Amazon S3 is used for file storage. To ensure availability and durability,
 files are replicated in two separate geographical regions.
@@ -5700,7 +5700,7 @@ Cloud storage: A file is split into smaller blocks and stored in cloud storage.
 Cold storage: Cold storage is a computer system designed for storing inactive data, meaning
 files are not accessed for a long time.
 
-Load balancer: A load balancer evenly distributes requests among API servers.
+#load_balancer: A #load_balancer evenly distributes requests among API servers.
 
 API servers: These are responsible for almost everything other than the uploading flow. API
 servers are used for user authentication, managing user profile, updating file metadata, etc.
@@ -5768,11 +5768,11 @@ following:
 - Data in cache replicas and the master is consistent.
 - Invalidate caches on database write to ensure cache and database hold the same value.
 
-Achieving strong consistency in a relational database is easy because it maintains the ACID
-(Atomicity, Consistency, Isolation, Durability) properties [9]. However, NoSQL databases do
-not support ACID properties by default. ACID properties must be programmatically
+Achieving strong consistency in a relational database is easy because it maintains the #ACID
+(Atomicity, Consistency, Isolation, Durability) properties [9]. However, #NoSQL databases do
+not support #ACID properties by default. #ACID properties must be programmatically
 incorporated in synchronization logic. In our design, we choose relational databases because
-the ACID is natively supported.
+the #ACID is natively supported.
 
 Metadata database
 
@@ -5894,16 +5894,16 @@ Failure Handling
 Failures can occur in a large-scale system and we must adopt design strategies to address
 these failures. Your interviewer might be interested in hearing about how you handle the
 following system failures:
-- Load balancer failure: If a load balancer fails, the secondary would become active and
-pick up the traffic. Load balancers usually monitor each other using a heartbeat, a periodic
-signal sent between load balancers. A load balancer is considered as failed if it has not sent
+- #load_balancer failure: If a #load_balancer fails, the secondary would become active and
+pick up the traffic. #load_balancer usually monitor each other using a heartbeat, a periodic
+signal sent between #load_balancer. A #load_balancer is considered as failed if it has not sent
 a heartbeat for some time.
 - Block server failure: If a block server fails, other servers pick up unfinished or pending
 jobs.
 - Cloud storage failure: S3 buckets are replicated multiple times in different regions. If
 files are not available in one region, they can be fetched from different regions.
 - API server failure: It is a stateless service. If an API server fails, the traffic is redirected
-to other API servers by a load balancer.
+to other API servers by a #load_balancer.
 - Metadata cache failure: Metadata cache servers are replicated multiple times. If one node
 goes down, you can still access other nodes to fetch data. We will bring up a new cache
 server to replace the failed one.
@@ -5962,7 +5962,7 @@ v=S2Hp_1jqpY8
 [6] How We’ve Scaled Dropbox: https://youtu.be/PE4gwstWhmc
 [7] Tridgell, A., & Mackerras, P. (1996). The rsync algorithm.
 [8] Librsync. (n.d.). Retrieved April 18, 2015, from https://github.com/librsync/librsync
-[9] ACID: https://en.wikipedia.org/wiki/ACID
+[9] #ACID: https://en.wikipedia.org/wiki/ACID
 [10] Dropbox security white paper:
 https://www.dropbox.com/static/business/resources/Security_Whitepaper.pdf
 [11] Amazon S3 Glacier: https://aws.amazon.com/glacier/faqs/
