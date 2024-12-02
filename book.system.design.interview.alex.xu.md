@@ -56,7 +56,8 @@ To understand this setup, it is helpful to investigate the _request flow_ and _t
    not hosted by our servers.
 2. Internet Protocol (IP) address is returned to the browser or mobile app. In
    the example, IP address 15.125.23.214 is returned.
-3. Once the IP address is obtained, Hypertext Transfer Protocol (HTTP)  [(1) Hypertext Transfer Protocol](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) requests are sent directly to your web server.
+3. Once the IP address is obtained, Hypertext Transfer Protocol (HTTP) [1]
+   requests are sent directly to your web server.
 4. The web server returns HTML pages or JSON response for rendering.
 
 ### traffic source
@@ -87,7 +88,6 @@ Split Web/DB to allow independent scaling
 ![db](https://raw.githubusercontent.com/arafatm/assets/main/img/system.design/01.03.png)
 
 ### Which databases to use?
-- [(2) Should you go Beyond  #RDBMSs?](https://blog.teamtreehouse.com/should-you-go-beyond-relational-databases)
 - #RDBMS MySQL, Oracle database, PostgreSQL, etc.
 - #NoSQL CouchDB, Neo4j, Cassandra, HBase, Amazon DynamoDB, etc. 
   - Grouped into four categories: 
@@ -164,8 +164,6 @@ look.
 Quoted from Wikipedia: “Database #replication can be used in many database
 management systems, usually with a master/slave relationship between the
 original (master) and the copies (slaves)” [3].
-- [(3) #Replication](https://en.wikipedia.org/wiki/Replication_(computing) )
-
 
 A _master database generally only supports write operations_. A _slave database
 gets copies of the data from the master database and only supports read
@@ -259,9 +257,6 @@ client. This caching strategy is called a read-through  #cache.
 Other caching strategies are available depending on the data type, size, and
 access patterns. A previous study explains how different caching strategies
 work [6].
-- [(4) Multi-master #replication](https://en.wikipedia.org/wiki/Multi-master_replication)
-- [(5) NDB Cluster #Replication: Multi-Master and Circular #Replication](https://dev.mysql.com/doc/refman/5.7/en/mysql-cluster-replication-multi-master.html)
-- [(6) Caching Strategies and How to Choose the Right One](https://codeahoy.com/2017/08/11/caching-strategies-and-how-to-choose-the-right-one/)
 
 Interacting with  #cache servers is simple because most  #cache servers provide
 APIs for common programming languages. The following code snippet shows typical
@@ -294,7 +289,6 @@ Here are a few considerations for using a  #cache system:
   regions, _maintaining consistency between the data store and  #cache is
   challenging_. For further details, refer to the paper titled “Scaling
    #Memcache at Facebook” published by Facebook [7].
-- (7) R. Nishtala, "Facebook, Scaling  #Memcache at," 10th USENIX Symposium on Networked Systems Design and Implementation (NSDI ’13).
 - _Mitigating failures_: A single  #cache server represents a potential single
   point of failure (_SPOF_), defined in Wikipedia as follows: “A single point
   of failure (SPOF) is a part of a system that, if it fails, will stop the
@@ -302,7 +296,6 @@ Here are a few considerations for using a  #cache system:
   different data centers are recommended_ to avoid SPOF. Another recommended
   approach is to _overprovision the required memory by certain percentages_.
   This provides a buffer as the memory usage increases.
-- [(8) Single point of failure](https://en.wikipedia.org/wiki/Single_point_of_failure)
 - _Eviction Policy_: Once the  #cache is full, any requests to add items to the
    #cache might cause existing items to be removed. This is called  #cache
   eviction. Least-recently-used (_LRU_) is the most popular  #cache eviction
@@ -486,12 +479,22 @@ Scaling a system is an _iterative process_. Iterating on what we have learned in
 Congratulations on getting this far! Now give yourself a pat on the back. Good
 job!
 
-- [(9) Amazon CloudFront Dynamic Content Delivery](https://aws.amazon.com/cloudfront/dynamic-content/)
-- [(10) Configure Sticky Sessions for Your Classic #load_balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html)
-- [(11) Active-Active for Multi-Regional Resiliency](https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b)
-- [(12) Amazon EC2 High Memory Instances](https://aws.amazon.com/ec2/instance-types/high-memory/)
-- [(13) What it takes to run Stack Overflow](http://nickcraver.com/blog/2013/11/22/what-it-takes-to-run-stack-overflow)
-- [(14) What The Heck Are You Actually Using #NoSQL For](http://highscalability.com/blog/2010/12/6/what-the-heck-are-you-actually-using-nosqlfor.html)
+### Reference materials
+
+###### [(1) Hypertext Transfer Protocol](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol)
+###### [(2) Should you go Beyond  #RDBMSs?](https://blog.teamtreehouse.com/should-you-go-beyond-relational-databases)
+###### [(3) #Replication](https://en.wikipedia.org/wiki/Replication_(computing) )
+###### [(4) Multi-master #replication](https://en.wikipedia.org/wiki/Multi-master_replication)
+###### [(5) NDB Cluster #Replication: Multi-Master and Circular #Replication](https://dev.mysql.com/doc/refman/5.7/en/mysql-cluster-replication-multi-master.html)
+###### [(6) Caching Strategies and How to Choose the Right One](https://codeahoy.com/2017/08/11/caching-strategies-and-how-to-choose-the-right-one/)
+###### (7) R. Nishtala, "Facebook, Scaling  #Memcache at," 10th USENIX Symposium on Networked Systems Design and Implementation (NSDI ’13).
+###### [(8) Single point of failure](https://en.wikipedia.org/wiki/Single_point_of_failure)
+###### [(9) Amazon CloudFront Dynamic Content Delivery](https://aws.amazon.com/cloudfront/dynamic-content/)
+###### [(10) Configure Sticky Sessions for Your Classic #load_balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html)
+###### [(11) Active-Active for Multi-Regional Resiliency](https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b)
+###### [(12) Amazon EC2 High Memory Instances](https://aws.amazon.com/ec2/instance-types/high-memory/)
+###### [(13) What it takes to run Stack Overflow](http://nickcraver.com/blog/2013/11/22/what-it-takes-to-run-stack-overflow)
+###### [(14) What The Heck Are You Actually Using #NoSQL For](http://highscalability.com/blog/2010/12/6/what-the-heck-are-you-actually-using-nosqlfor.html)
 
 ## CHAPTER 2: BACK-OF-THE-ENVELOPE ESTIMATION
 
